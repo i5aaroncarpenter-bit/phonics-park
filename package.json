@@ -1,0 +1,14 @@
+{
+  "name": "phonics-park",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Phonics Park — Sound it out. Swing for the fences. A baseball phonics game for early readers.",
+  "scripts": {
+    "build": "node -e \"console.log('Phonics Park: static build, nothing to compile.')\"",
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
