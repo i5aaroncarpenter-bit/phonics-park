@@ -15,6 +15,18 @@ let voiceName = "";
 let voicesReady = false;
 const live = new Set();
 let captionFn = null;
+let speakingFn = null;
+let activeCount = 0;
+
+/** Register a listener told when speech starts (true) and stops (false). */
+export function onSpeaking(fn) {
+  speakingFn = fn;
+}
+
+function speaking(delta) {
+  activeCount = Math.max(0, activeCount + delta);
+  if (speakingFn) speakingFn(activeCount > 0);
+}
 
 /** Register a listener that receives coach/announcer lines for on-screen captions. */
 export function onCaption(fn) {
@@ -23,13 +35,42 @@ export function onCaption(fn) {
 
 const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
 
+/**
+ * "Easy" respellings for the continuous consonants and short vowels. Some
+ * speech engines spell out "sss" or read "eh" as "ay"; parents can switch to
+ * this style from the Coach's Clipboard if the pure sounds come out wrong.
+ */
+const EASY = {
+  m: "muh", n: "nuh", s: "suh", f: "fuh", l: "luh", r: "ruh", v: "vuh", z: "zuh",
+  ll: "luh", ss: "suh", ff: "fuh", mm: "muh", nn: "nuh", sh: "shuh", th: "thuh",
+  a: "a as in apple", e: "e as in egg", i: "i as in igloo", o: "o as in octopus", u: "u as in up",
+  st: "suh tuh", sl: "suh luh", tr: "tuh ruh", bl: "buh luh", fl: "fuh luh", gr: "guh ruh",
+  sp: "suh puh", cl: "kuh luh", dr: "duh ruh", sn: "suh nuh", sw: "suh wuh", cr: "kuh ruh",
+  fr: "fuh ruh", pl: "puh luh", br: "buh ruh", gl: "guh luh", sm: "suh muh", pr: "puh ruh",
+  mp: "muh puh", nd: "nuh duh", nt: "nuh tuh", sk: "suh kuh", lk: "luh kuh", ft: "fuh tuh", lt: "luh tuh",
+};
+let soundStyle = "pure";
+
+export function setSoundStyle(style) {
+  soundStyle = style === "easy" ? "easy" : "pure";
+}
+
+export function getSoundStyle() {
+  return soundStyle;
+}
+
+function soundText(unit) {
+  if (soundStyle === "easy" && EASY[unit] !== undefined) return EASY[unit];
+  return SOUND[unit] ?? unit;
+}
+
 /** Respellings that make text-to-speech produce a phoneme instead of a letter name. */
 const SOUND = {
   m: "mmm", n: "nnn", s: "sss", f: "fff", l: "lll", r: "rrr", v: "vvv", z: "zzz",
   b: "buh", c: "kuh", k: "kuh", ck: "kuh", d: "duh", g: "guh", p: "puh", t: "tuh", j: "juh",
   h: "huh", w: "wuh", y: "yuh", qu: "kwuh", x: "ks", ch: "chuh", sh: "shh", th: "thuh", wh: "wuh",
   ng: "ing", nk: "ink", ll: "lll", ss: "sss", ff: "fff", dd: "duh", mm: "mmm", tt: "tuh", nn: "nnn",
-  a: "ah", e: "eh", i: "ih", o: "aw", u: "uh",
+  a: "ah", e: "ehh", i: "ih", o: "aw", u: "uh",
   ai: "ay", ay: "ay", "a_e": "ay", "long-a": "ay",
   ee: "ee", ea: "ee", "e_e": "ee", "long-e": "ee",
   ie: "eye", igh: "eye", "i_e": "eye", "long-i": "eye",
@@ -131,10 +172,12 @@ function utter(text, opts = {}) {
     u.pitch = opts.pitch ?? 1.05;
     u.volume = opts.volume ?? 1;
     let done = false;
+    speaking(1);
     const finish = () => {
       if (done) return;
       done = true;
       live.delete(u);
+      speaking(-1);
       resolve();
     };
     u.onend = finish;
@@ -200,7 +243,7 @@ export async function stretchWord(item) {
   stopSpeech();
   const seq = [];
   for (let i = 0; i < g.length; i++) {
-    const t = SOUND[units[i]] ?? units[i];
+    const t = soundText(units[i]);
     if (t) seq.push({ text: t, rate: 0.85, pitch: 1.05 });
   }
   seq.push({ text: item.word, rate: 0.82, pitch: 1.05 });
@@ -255,12 +298,9 @@ export function graphemeUnits(item) {
 function respell(key, item) {
   if (item && item.g) {
     const idx = item.g.map((x) => x.toLowerCase()).indexOf(key);
-    if (idx >= 0) {
-      const unit = graphemeUnits(item)[idx];
-      return SOUND[unit] ?? unit;
-    }
+    if (idx >= 0) return soundText(graphemeUnits(item)[idx]);
   }
-  return SOUND[key] ?? key;
+  return soundText(key);
 }
 
 /* ---------- fallback formant synth (no Web Speech) ---------- */

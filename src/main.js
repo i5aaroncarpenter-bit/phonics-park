@@ -1,7 +1,7 @@
 import { loadSave, persist as persistSave, awardTrophy } from "./save.js";
 import { STAGES, buildCampStage } from "./curriculum.js";
 import { setMuted, unlock, startMusic, stopMusic, sfx } from "./audio.js";
-import { initSpeech, setSpeechRate, stopSpeech } from "./speech.js";
+import { initSpeech, setSpeechRate, setSoundStyle, stopSpeech } from "./speech.js";
 import { renderTitle } from "./screens/title.js";
 import { renderSeason } from "./screens/season.js";
 import { renderLocker } from "./screens/locker.js";
@@ -15,6 +15,7 @@ window.__pbDebug = /[?&]debug/.test(location.search);
 let save = loadSave();
 setMuted(!!save.mute);
 setSpeechRate(save.voiceRate || 0.92);
+setSoundStyle(save.soundStyle || "pure");
 initSpeech(save.voiceName);
 
 function persist() {

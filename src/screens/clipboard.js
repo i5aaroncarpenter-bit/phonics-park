@@ -7,7 +7,7 @@ import { weakKeys, strongKeys, resetSave } from "../save.js";
 import { KEYWORDS, ALL_WORDS, STAGES } from "../curriculum.js";
 import { esc, ICON, muteButton, el } from "../ui.js";
 import { sfx } from "../audio.js";
-import { listVoices, currentVoiceName, setVoiceByName, setSpeechRate, say, sayWord, saySound, speechAvailable } from "../speech.js";
+import { listVoices, currentVoiceName, setVoiceByName, setSpeechRate, setSoundStyle, say, sayWord, saySound, speechAvailable } from "../speech.js";
 
 export function renderClipboard(app, { save, persist, onBack, onReset, onToggleMute }) {
   const weak = weakKeys(save, 10);
@@ -15,7 +15,7 @@ export function renderClipboard(app, { save, persist, onBack, onReset, onToggleM
   const voices = listVoices();
   const t = save.totals;
   const stage = STAGES.find((s) => s.id === save.unlocked) || STAGES[STAGES.length - 1];
-  const label = (k) => (KEYWORDS[k] ? `${k} <small>${KEYWORDS[k][1]}</small>` : esc(k));
+  const label = (k) => (KEYWORDS[k] ? `${esc(k)} <em>${KEYWORDS[k][1]}</em>` : esc(k));
 
   app.innerHTML = `
     <section class="screen clip-screen">
@@ -54,9 +54,19 @@ export function renderClipboard(app, { save, persist, onBack, onReset, onToggleM
             <label class="field"><span>Speed</span>
               <input id="rate" type="range" min="0.7" max="1.15" step="0.05" value="${save.voiceRate || 0.92}" />
             </label>
+            <label class="field"><span>Letter sounds</span>
+              <select id="sound-style">
+                <option value="pure" ${(save.soundStyle || "pure") === "pure" ? "selected" : ""}>Pure sounds (mmm, sss, ah)</option>
+                <option value="easy" ${save.soundStyle === "easy" ? "selected" : ""}>Easy sounds (muh, suh, "a as in apple")</option>
+              </select>
+            </label>
             <button class="btn" id="test-voice" type="button">${ICON.ear} Test voice</button>
-            <p class="muted">Tip: on Chrome, "Google US English" sounds the most natural. On iPad, "Samantha" works well.</p>`
+            <p class="muted">Tip: on Chrome, "Google US English" sounds the most natural. On iPad, "Samantha" works well. If letter sounds come out as letter names or get spelled out, switch to Easy sounds.</p>`
             : `<p class="muted">This browser has no speech voices. Words are approximated with a built-in synth — Chrome, Safari or Edge will sound much better.</p>`}
+        </div>
+        <div class="clip-card">
+          <h3>Sound lab <small class="muted">(tap any tile to hear its sound)</small></h3>
+          <div class="lab-grid">${["s", "a", "t", "p", "i", "n", "m", "d", "g", "o", "c", "k", "e", "u", "r", "h", "b", "f", "l", "j", "v", "w", "x", "y", "z", "qu", "sh", "ch", "th", "ck", "wh", "ng", "ai", "ay", "ee", "ea", "oa", "ow", "oo", "ar", "or", "er", "ir", "ur", "a_e", "i_e", "o_e", "u_e"].map((g) => `<button class="lab-tile" data-g="${g}" type="button">${esc(g.replace("_", "－"))}${KEYWORDS[g] ? `<small>${KEYWORDS[g][1]}</small>` : ""}</button>`).join("")}</div>
         </div>
         <div class="clip-card">
           <h3>How Phonics Bowl teaches reading</h3>
@@ -88,11 +98,21 @@ export function renderClipboard(app, { save, persist, onBack, onReset, onToggleM
       else say(k);
     };
   });
+  app.querySelectorAll(".lab-tile").forEach((b) => {
+    b.onclick = () => {
+      const g = b.dataset.g;
+      b.classList.add("glow");
+      setTimeout(() => b.classList.remove("glow"), 500);
+      const k = KEYWORDS[g];
+      saySound(g).then(() => { if (k) say(`${g.replace("_", " ")} like in ${k[0]}`, { interrupt: false, rate: 0.95 }); });
+    };
+  });
   const voiceSel = app.querySelector("#voice");
   if (voiceSel) {
     voiceSel.onchange = () => { setVoiceByName(voiceSel.value); save.voiceName = voiceSel.value; persist(); say("Hi! I'm your coach. Let's play Phonics Bowl!"); };
     app.querySelector("#rate").oninput = (e) => { save.voiceRate = Number(e.target.value); setSpeechRate(save.voiceRate); persist(); };
     app.querySelector("#test-voice").onclick = () => { sfx("tap"); say(`Hi ${save.name}! The cat sat on the mat. Ready to play?`); };
+    app.querySelector("#sound-style").onchange = (e) => { save.soundStyle = e.target.value; setSoundStyle(save.soundStyle); persist(); saySound("s"); setTimeout(() => saySound("a"), 900); };
   }
   app.querySelector("#reset").onclick = () => {
     const dlg = el(`<div class="modal"><div class="modal-card">

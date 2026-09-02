@@ -4,7 +4,7 @@
  * and two original marching-band style loops.
  */
 
-import { setSpeechMuted } from "./speech.js";
+import { setSpeechMuted, onSpeaking } from "./speech.js";
 
 let ctx = null;
 let master = null;
@@ -30,7 +30,7 @@ function ensure() {
   master.connect(comp);
   comp.connect(ctx.destination);
   musicBus = ctx.createGain();
-  musicBus.gain.value = 0.22;
+  musicBus.gain.value = 0.16;
   musicBus.connect(master);
   sfxBus = ctx.createGain();
   sfxBus.gain.value = 0.9;
@@ -324,8 +324,16 @@ export function stopMusic() {
   }
 }
 
+let musicLevel = 0.16;
 export function musicVolume(v) {
+  musicLevel = v;
   if (musicBus) musicBus.gain.setTargetAtTime(v, ctx.currentTime, 0.3);
 }
+
+// Duck the music while the voice is talking so words stay crystal clear.
+onSpeaking((isSpeaking) => {
+  if (!musicBus || !ctx) return;
+  musicBus.gain.setTargetAtTime(isSpeaking ? musicLevel * 0.3 : musicLevel, ctx.currentTime, 0.15);
+});
 
 document.addEventListener("pointerdown", () => { unlock(); }, { once: true, capture: true });

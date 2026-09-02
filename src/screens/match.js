@@ -8,7 +8,7 @@ import { getStage, buildGamePlan, retrySpec, gradeYards } from "../curriculum.js
 import { recordMastery, teamColors, helmetStyle } from "../save.js";
 import { createField } from "../field.js";
 import { createFX } from "../fx.js";
-import { sfx, startMusic, stopMusic, crowd, crowdOff } from "../audio.js";
+import { sfx, startMusic, stopMusic, crowd, crowdOff, musicVolume } from "../audio.js";
 import { coach, announce, stopSpeech, onCaption } from "../speech.js";
 import { ICON, esc, mascotBadge, muteButton, el } from "../ui.js";
 import { presentPass } from "../plays/pass.js";
@@ -281,6 +281,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
     sfx("whistle", { long: true });
     crowd(0.5);
     startMusic("game");
+    musicVolume(0.1);
     const firstTime = !save.tutorials["stage:" + stage.id] || stage.camp;
     if (firstTime) {
       save.tutorials["stage:" + stage.id] = true;
@@ -341,6 +342,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
 
   function cleanup() {
     G.alive = false;
+    musicVolume(0.16);
     onCaption(null);
     clearTimeout(captionTimer);
     stopSpeech();

@@ -469,6 +469,11 @@ h1, h2, h3, h4 { font-family: var(--head); margin: 0; }
 .mastery i { position: absolute; left: 0; bottom: 0; height: 6px; background: var(--green); }
 .mastery.amber i { background: #ff9f1c; } .mastery.red i { background: var(--red); }
 .mastery small { position: absolute; right: 8px; bottom: 6px; font-size: 11px; color: #667; font-family: var(--body); }
+.mastery em { font-style: normal; font-size: 16px; margin-left: 4px; }
+.lab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.lab-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 64px; border: 0; border-radius: 12px; background: linear-gradient(180deg, #ffe680, var(--gold)); color: #4a3300; font-family: var(--head); font-weight: 800; font-size: 22px; line-height: 1; box-shadow: 0 4px 0 var(--gold-deep); }
+.lab-tile small { font-size: 14px; margin-top: 2px; }
+.lab-tile.glow { outline: 4px solid var(--blue); }
 .field { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-weight: 800; }
 .field select, .field input[type="range"] { flex: 1; font-size: 15px; padding: 6px; border-radius: 10px; border: 2px solid #c5cee6; }
 .how { padding-left: 18px; font-weight: 700; color: #334; line-height: 1.45; }
