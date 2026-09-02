@@ -8,7 +8,7 @@ import { esc, ICON } from "../ui.js";
 import { KEYWORDS } from "../curriculum.js";
 import { sayWord, saySound, stretchWord, coach, cue, stopSpeech } from "../speech.js";
 import { sfx } from "../audio.js";
-import { startClock, shakeEl, wait } from "./common.js";
+import { clockFor, shakeEl, wait } from "./common.js";
 
 export function presentPass(panel, spec, ctx) {
   return new Promise((resolve) => {
@@ -66,7 +66,7 @@ export function presentPass(panel, spec, ctx) {
       resolve(res);
     };
 
-    const clock = startClock(panel.querySelector("#bar"), ctx.limitMs, () => {
+    const clock = clockFor(panel, ctx, () => {
       if (busy || done) return;
       busy = true;
       sfx("whistle");

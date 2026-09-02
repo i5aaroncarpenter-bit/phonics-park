@@ -329,6 +329,7 @@ h1, h2, h3, h4 { font-family: var(--head); margin: 0; }
 .timer-bar { width: min(560px, 92%); height: 12px; border-radius: 999px; background: #d9e0f0; overflow: hidden; }
 .timer-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #2ec27e, #8ce99a); transform-origin: left; }
 .timer-bar i.low { background: linear-gradient(90deg, #ff7b00, #ffd60a); }
+.timer-bar i.hurry { background: linear-gradient(90deg, #d62828, #ff6b6b); animation: pulse 0.5s ease-in-out infinite; }
 
 .tile-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .tile {

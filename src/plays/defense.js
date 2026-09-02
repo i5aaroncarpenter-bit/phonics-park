@@ -10,7 +10,7 @@
 import { esc, ICON } from "../ui.js";
 import { sayWord, saySound, coach, cue, stopSpeech } from "../speech.js";
 import { sfx } from "../audio.js";
-import { startClock, optionButtons, markCorrect, shakeEl, wait } from "./common.js";
+import { clockFor, optionButtons, markCorrect, shakeEl, wait } from "./common.js";
 
 export function presentDefense(panel, spec, ctx) {
   return new Promise((resolve) => {
@@ -50,7 +50,7 @@ export function presentDefense(panel, spec, ctx) {
       resolve(res);
     };
 
-    const clock = startClock(panel.querySelector("#bar"), ctx.limitMs, async () => {
+    const clock = clockFor(panel, ctx, async () => {
       if (busy || done) return;
       busy = true;
       sfx("whistle");

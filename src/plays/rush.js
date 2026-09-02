@@ -11,7 +11,7 @@
 import { esc, ICON } from "../ui.js";
 import { sayWord, saySound, coach, cue, stopSpeech, stretchWord } from "../speech.js";
 import { sfx } from "../audio.js";
-import { startClock, optionButtons, markCorrect, shakeEl, wait } from "./common.js";
+import { clockFor, optionButtons, markCorrect, shakeEl, wait } from "./common.js";
 
 const TITLE = { sound: "SOUND RUSH", initial: "FIRST SOUND RUSH", hear: "RUSH PLAY", read: "READ & RUSH", pic: "PICTURE RUSH" };
 
@@ -56,7 +56,7 @@ export function presentRush(panel, spec, ctx) {
       resolve(res);
     };
 
-    const clock = startClock(panel.querySelector("#bar"), ctx.limitMs, async () => {
+    const clock = clockFor(panel, ctx, async () => {
       if (busy || done) return;
       busy = true;
       sfx("whistle");

@@ -2,23 +2,35 @@
 
 import { esc } from "../ui.js";
 import { KEYWORDS } from "../curriculum.js";
+import { sfx } from "../audio.js";
 
-/** Animated time bar. Calls onExpire once when time runs out. */
-export function startClock(bar, ms, onExpire) {
+/**
+ * Animated time bar. When the bar empties the play enters a "hurry up"
+ * grace period (still answerable, graded as the slowest tier); onExpire
+ * fires only after the grace period also runs out.
+ */
+export function startClock(bar, ms, onExpire, { graceMs = Math.round(ms * 0.9), onHurry } = {}) {
   const t0 = performance.now();
   let dead = false;
+  let hurried = false;
   let raf = 0;
   let paused = 0;
   let pauseAt = 0;
   const elapsedAt = (now) => now - t0 - paused - (pauseAt ? now - pauseAt : 0);
   const tick = (now) => {
     if (dead) return;
-    const u = Math.min(1, elapsedAt(now) / ms);
-    if (bar) {
-      bar.style.transform = `scaleX(${1 - u})`;
-      bar.classList.toggle("low", u > 0.72);
+    const e = elapsedAt(now);
+    const u = Math.min(1, e / ms);
+    if (u >= 1 && !hurried) {
+      hurried = true;
+      if (bar) bar.classList.add("hurry");
+      onHurry && onHurry();
     }
-    if (u >= 1) {
+    if (bar) {
+      bar.style.transform = hurried ? `scaleX(${Math.max(0, 1 - (e - ms) / graceMs)})` : `scaleX(${1 - u})`;
+      bar.classList.toggle("low", !hurried && u > 0.72);
+    }
+    if (e >= ms + graceMs) {
       dead = true;
       onExpire && onExpire();
       return;
@@ -32,6 +44,16 @@ export function startClock(bar, ms, onExpire) {
     pause() { if (!pauseAt) pauseAt = performance.now(); },
     resume() { if (pauseAt) { paused += performance.now() - pauseAt; pauseAt = 0; } },
   };
+}
+
+/** The standard play clock: bar in #bar, "HURRY!" callout when time is short. */
+export function clockFor(panel, ctx, onExpire) {
+  return startClock(panel.querySelector("#bar"), ctx.limitMs, onExpire, {
+    onHurry: () => {
+      sfx("whistle");
+      if (ctx.fx) ctx.fx.callout("HURRY!", "fire", 900);
+    },
+  });
 }
 
 /** Render a row of big tappable option buttons. */

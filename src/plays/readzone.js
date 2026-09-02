@@ -6,7 +6,7 @@
 import { ICON } from "../ui.js";
 import { say, sayWord, coach, cue, stopSpeech } from "../speech.js";
 import { sfx } from "../audio.js";
-import { startClock, optionButtons, markCorrect, shakeEl, wait, sentenceChips } from "./common.js";
+import { clockFor, optionButtons, markCorrect, shakeEl, wait, sentenceChips } from "./common.js";
 import { ALL_WORDS } from "../curriculum.js";
 
 export function presentReadZone(panel, spec, ctx) {
@@ -38,7 +38,7 @@ export function presentReadZone(panel, spec, ctx) {
       resolve(res);
     };
 
-    const clock = startClock(panel.querySelector("#bar"), ctx.limitMs, async () => {
+    const clock = clockFor(panel, ctx, async () => {
       if (busy || done) return;
       busy = true;
       sfx("whistle");
