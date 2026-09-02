@@ -29,7 +29,7 @@ Twelve games, each against a new team, each teaching one phonics skill in order:
 | 11 Bossy R Rumble | ar or er ir ur | Cyber Cats |
 | 12 The Phonics Bowl | championship — everything mixed | Golden Gorillas |
 
-Win a game (outscore the opponent) to unlock the next one. Stars are earned for accuracy.
+Win a game (outscore the opponent) to unlock the next one. Stars are earned for accuracy. **Training Camp** (on the season screen) is a short no-pressure drill built from the sounds and words the child has missed most.
 
 ## The plays
 
@@ -43,7 +43,9 @@ Every correct play gains yards; 100 yards is a touchdown. Every miss lets the op
 
 ## Grown-ups
 
-**Coach's Clipboard** (from the title screen) shows which sounds are strong or need practice, lets you choose the voice and speed, and can reset progress. Progress is stored in the browser (localStorage).
+**Coach's Clipboard** (from the title screen) shows which sounds are strong or need practice, has a Sound Lab to hear every sound tile, lets you choose the voice, speed and letter-sound style, and can reset progress. Progress is stored in the browser (localStorage).
+
+Add `?debug` to the URL to expose the current play spec on `window.__pbSpec` for automated testing.
 
 ## Tech
 
