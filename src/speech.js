@@ -14,6 +14,12 @@ let voice = null;
 let voiceName = "";
 let voicesReady = false;
 const live = new Set();
+let captionFn = null;
+
+/** Register a listener that receives coach/announcer lines for on-screen captions. */
+export function onCaption(fn) {
+  captionFn = fn;
+}
 
 const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
 
@@ -138,7 +144,11 @@ export async function say(text, opts = {}) {
     await fallbackWord(String(text));
     return;
   }
-  if (opts.interrupt !== false) stopSpeech();
+  if (opts.interrupt !== false) {
+    stopSpeech();
+    // Chrome can drop an utterance queued in the same tick as cancel().
+    await new Promise((r) => setTimeout(r, 30));
+  }
   const parts = Array.isArray(text) ? text : [text];
   let last;
   for (const p of parts) {
@@ -189,12 +199,20 @@ export async function stretchWord(item) {
 
 /** The coach's voice — slightly lower and quicker. */
 export function coach(text, opts = {}) {
+  if (captionFn) captionFn(text, "coach");
   return say(text, { rate: 1.0, pitch: 0.98, ...opts });
 }
 
 /** Cheerful announcer line. */
 export function announce(text) {
+  if (captionFn) captionFn(text, "announce");
   return say(text, { rate: 1.02, pitch: 1.12 });
+}
+
+/** Short play-call cue ("Pass play!") spoken before the prompt. */
+export function cue(text) {
+  if (captionFn) captionFn(text, "cue");
+  return say(text, { rate: 1.08, pitch: 1.15 });
 }
 
 /* ---------- grapheme → sound unit ---------- */

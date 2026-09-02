@@ -4,7 +4,7 @@
  */
 
 import { esc, ICON } from "../ui.js";
-import { sayWord, saySound, coach, stopSpeech, stretchWord } from "../speech.js";
+import { sayWord, saySound, coach, cue, stopSpeech, stretchWord } from "../speech.js";
 import { sfx } from "../audio.js";
 import { startClock, optionButtons, markCorrect, shakeEl, wait } from "./common.js";
 
@@ -110,12 +110,11 @@ export function presentKick(panel, spec, ctx) {
     });
 
     (async () => {
-      if (ctx.first) {
-        clock.pause();
-        await coach("One sound is missing from the word. Listen, then kick the right sound into the gap!");
-        clock.resume();
-      }
-      if (!done) sayWord(item);
+      clock.pause();
+      if (ctx.first) await coach("One sound is missing from the word. Listen, then kick the right sound into the gap!");
+      else await cue(spec.retry ? "Second chance!" : "Field goal!");
+      if (!done) await sayWord(item);
+      clock.resume();
     })();
   });
 }

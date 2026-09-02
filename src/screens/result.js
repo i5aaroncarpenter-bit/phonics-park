@@ -20,7 +20,7 @@ export function renderResult(app, { save, stats, newTrophies = [], onAgain, onNe
         <div class="final-score">
           <div class="side home"><b>${esc(save.team.name)}</b><span class="big-num">${stats.home}</span></div>
           <div class="vs">FINAL</div>
-          <div class="side away"><b>${esc(stage.opponent.name)}</b><span class="big-num">${stats.away}</span>${mascotBadge(stage.opponent, 40)}</div>
+          <div class="side away"><b>${mascotBadge(stage.opponent, 34)} ${esc(stage.opponent.name)}</b><span class="big-num">${stats.away}</span></div>
         </div>
         <div class="stars-big" id="stars">${starsHTML(0)}</div>
         <div class="result-stats">

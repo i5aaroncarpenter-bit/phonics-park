@@ -4,7 +4,7 @@
  */
 
 import { ICON } from "../ui.js";
-import { say, sayWord, coach, stopSpeech } from "../speech.js";
+import { say, sayWord, coach, cue, stopSpeech } from "../speech.js";
 import { sfx } from "../audio.js";
 import { startClock, optionButtons, markCorrect, shakeEl, wait, sentenceChips } from "./common.js";
 import { ALL_WORDS } from "../curriculum.js";
@@ -98,11 +98,10 @@ export function presentReadZone(panel, spec, ctx) {
     });
 
     (async () => {
-      if (ctx.first) {
-        clock.pause();
-        await coach("Welcome to the Read Zone! Read the sentence yourself. Tap any word if you need help. Then tap the picture that matches.");
-        clock.resume();
-      }
+      clock.pause();
+      if (ctx.first) await coach("Welcome to the Read Zone! Read the sentence yourself. Tap any word if you need help. Then tap the picture that matches.");
+      else await cue(spec.retry ? "Second chance!" : "Read zone!");
+      clock.resume();
     })();
   });
 }

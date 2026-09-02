@@ -118,11 +118,15 @@ export function createField(canvas, opts) {
 
   /* ---------- play animations ---------- */
 
-  async function huddle(los) {
+  async function huddle(los, offenseIsHome = true) {
     setLOS(los);
-    formation(los, true);
+    formation(offenseIsHome ? los : los + 2, offenseIsHome);
+    if (!offenseIsHome) S.camTarget = clamp(los + 2, 8, 96);
     S.cam = S.camTarget;
   }
+
+  let celebration = opts.celebration || "spike";
+  function setCelebration(id) { celebration = id || "spike"; }
 
   async function snap() {
     const qb = byRole("qb");
@@ -410,15 +414,28 @@ export function createField(canvas, opts) {
 
   async function celebrate(p) {
     if (opts.onSfx) opts.onSfx("touchdown");
+    if (opts.onCelebrate) opts.onCelebrate(celebration);
     S.hype = 1;
-    for (const q of S.players) if (q.team === p.team && q.anim !== "tackled") q.anim = "cheer";
+    const teamAnim = celebration === "dance" ? "dance" : "cheer";
+    for (const q of S.players) if (q.team === p.team && q.anim !== "tackled") q.anim = teamAnim;
     for (const q of S.players) if (q.team !== p.team) q.anim = "idle";
-    p.anim = "cheer";
-    await tween(1500, (u) => { S.camTarget = clamp(p.x, 8, 100); });
-  }
-
-  async function spikeBall(p) {
-    await wait(100);
+    p.anim = celebration === "flip" ? "flip" : celebration === "dino" ? "stomp" : celebration === "dance" ? "dance" : "cheer";
+    p.hasBall = celebration !== "spike";
+    if (celebration === "spike") {
+      S.ball.visible = true;
+      S.ball.x = p.x + 0.4 * p.facing;
+      S.ball.lane = p.lane;
+      S.ball.spin = 0.5;
+      tween(900, (u) => {
+        S.ball.z = Math.max(0, 1.2 - u * 3) + Math.max(0, Math.sin(Math.max(0, u - 0.4) * Math.PI * 1.6)) * 1.5;
+        S.ball.x = p.x + (0.4 + u * 1.2) * p.facing;
+      }, (u) => u).then(() => { S.ball.visible = false; });
+    }
+    await tween(1500, (u) => {
+      S.camTarget = clamp(p.x, 8, 100);
+      if (celebration === "dino" && Math.floor(u * 6) % 2 === 0 && opts.onStomp) opts.onStomp();
+    });
+    S.ball.visible = false;
   }
 
   function setHype(v) { S.hype = clamp(v, 0, 1); }
@@ -505,10 +522,11 @@ export function createField(canvas, opts) {
       const bob = Math.sin(S.t * (4 + S.hype * 6) + c.ph + c.x * 6) * (1.5 + S.hype * 6);
       const x = c.x * w;
       const y = ry + (S.hype > 0.5 ? -Math.abs(bob) : bob * 0.4);
+      const r = clamp(S.h / 200, 2.6, 4.6);
       ctx.fillStyle = pal[c.c];
-      ctx.beginPath(); ctx.arc(x, y, 3.2, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
       ctx.fillStyle = "rgba(0,0,0,0.25)";
-      ctx.fillRect(x - 3, y + 3, 6, 5);
+      ctx.fillRect(x - r, y + r, r * 2, r * 1.5);
     }
     // Wall + banner
     ctx.fillStyle = home.primary;
@@ -709,6 +727,9 @@ export function createField(canvas, opts) {
     if (p.anim === "tackle") { lean = 0.55; armL = -1.5; armR = -1.5; bob = 5; }
     if (p.anim === "kick") { legA = -1.6; armL = 0.8; armR = -1.3; lean = -0.15; }
     if (p.anim === "dive") { lean = 1.0; bob = 8; armL = -2.2; armR = -2.2; }
+    if (p.anim === "dance") { bob = Math.abs(Math.sin(t * 0.9)) * 5; lean = Math.sin(t * 0.9) * 0.25; armL = Math.sin(t * 0.9) * 1.6 - 1.2; armR = -Math.sin(t * 0.9) * 1.6 - 1.2; legA = Math.sin(t * 0.9) * 0.7; }
+    if (p.anim === "flip") { bob = -Math.abs(Math.sin(t * 0.5)) * 16; armL = -2.6; armR = -2.6; legA = 0.6; }
+    if (p.anim === "stomp") { bob = Math.abs(Math.sin(t * 0.6)) * 8; lean = 0.2; armL = -1.8; armR = 0.8; legA = Math.sin(t * 0.6) * 1.2; }
     cy -= bob * 0.3;
     // Shadow
     ctx.fillStyle = "rgba(0,0,0,0.28)";
@@ -718,6 +739,10 @@ export function createField(canvas, opts) {
     if (p.anim === "tackled") {
       ctx.rotate(p.facing * 1.35);
       ctx.translate(0, 16 * s);
+    } else if (p.anim === "flip") {
+      ctx.translate(0, -28 * s);
+      ctx.rotate(p.facing * (t * 0.5 % TAU));
+      ctx.translate(0, 28 * s);
     } else {
       ctx.rotate(lean * p.facing);
     }
@@ -847,7 +872,7 @@ export function createField(canvas, opts) {
   function setSky(s) { sky = s; }
 
   return {
-    huddle, animPass, animRush, animKick, animDefense, celebrate, setLOS, setHype, setSky, destroy, spikeBall,
+    huddle, animPass, animRush, animKick, animDefense, celebrate, setLOS, setHype, setSky, setCelebration, destroy,
     get state() { return S; },
     screenPos(yard, lane = 0) {
       const r = canvas.getBoundingClientRect();

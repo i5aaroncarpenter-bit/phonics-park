@@ -6,7 +6,7 @@
 
 import { esc, ICON } from "../ui.js";
 import { KEYWORDS } from "../curriculum.js";
-import { sayWord, saySound, stretchWord, coach, stopSpeech } from "../speech.js";
+import { sayWord, saySound, stretchWord, coach, cue, stopSpeech } from "../speech.js";
 import { sfx } from "../audio.js";
 import { startClock, shakeEl, wait } from "./common.js";
 
@@ -160,12 +160,11 @@ export function presentPass(panel, spec, ctx) {
 
     // Kick off: say the word (and, the very first time, a longer coach line).
     (async () => {
-      if (ctx.first) {
-        clock.pause();
-        await coach("Listen to the word. Tap each sound you hear, in order. Then hit THROW to blend it!");
-        clock.resume();
-      }
-      if (!done) sayWord(item);
+      clock.pause();
+      if (ctx.first) await coach("Listen to the word. Tap each sound you hear, in order. Then hit THROW to blend it!");
+      else await cue(spec.retry ? "Second chance!" : "Pass play!");
+      if (!done) await sayWord(item);
+      clock.resume();
     })();
   });
 }

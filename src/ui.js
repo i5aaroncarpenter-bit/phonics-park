@@ -58,10 +58,9 @@ export function helmetSVG({ primary, secondary, style = "solid", size = 96, numb
     <path d="M10 52 C10 24 28 8 50 8 C74 8 88 26 88 48 L88 60 C88 66 82 70 76 70 L64 70 L60 82 L34 82 L32 66 C20 66 10 62 10 52z" fill="${shell}"/>
     <g clip-path="url(#${id}c)">${decal}</g>
     <path d="M22 24 Q40 12 62 16" stroke="rgba(255,255,255,.4)" stroke-width="5" fill="none" stroke-linecap="round"/>
-    <path d="M60 46 h26 M60 58 h26 M64 70 v-24" stroke="#cfd8dc" stroke-width="4" fill="none" stroke-linecap="round"/>
     <ellipse cx="74" cy="52" rx="10" ry="12" fill="#f2c49b" opacity=".95"/>
     <circle cx="77" cy="49" r="1.8" fill="#222"/>
-    <path d="M60 46 h28 M60 58 h28 M66 40 v32" stroke="#cfd8dc" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M60 46 h30 M60 58 h30 M88 40 v24" stroke="#cfd8dc" stroke-width="4" fill="none" stroke-linecap="round"/>
     ${number != null ? `<text x="40" y="84" font-size="14" font-weight="800" fill="${secondary}" font-family="Baloo 2, Nunito, sans-serif" text-anchor="middle">${esc(number)}</text>` : ""}
   </svg>`;
 }

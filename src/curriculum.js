@@ -61,7 +61,7 @@ const CVC_AI = [
   w("tip", ["t", "i", "p"]), w("tan", ["t", "a", "n"]), w("pan", ["p", "a", "n"], "🍳"),
   w("can", ["c", "a", "n"], "🥫"), w("ant", ["a", "n", "t"], "🐜"), w("pat", ["p", "a", "t"]),
   w("nit", ["n", "i", "t"]), w("mad", ["m", "a", "d"], "😠"), w("dim", ["d", "i", "m"]),
-  w("sap", ["s", "a", "p"]), w("tam", ["t", "a", "m"]), w("Sam", ["S", "a", "m"], "🧒"),
+  w("sap", ["s", "a", "p"]), w("tam", ["t", "a", "m"]), w("pip", ["p", "i", "p"], "🍎"),
 ];
 
 const CVC_ALL = [
@@ -661,7 +661,8 @@ export function buildGamePlan(stage, save, heat = 1) {
     if (usedWords.has(key) && guard < n * 4) continue;
     usedWords.add(key);
     spec.stageId = stage.id;
-    spec.limitMs = Math.round((stage.baseMs || 8500) * (spec.type === "readzone" ? 2.2 : spec.type === "pass" ? 1.4 : 1) / heat);
+    const mult = { readzone: 2.6, pass: 1.9, kick: 1.3, defense: 1.15 }[spec.type] || 1;
+    spec.limitMs = Math.round((stage.baseMs || 8500) * mult / heat);
     plan.push(spec);
   }
   // Championship and later games open with an easy confidence play.

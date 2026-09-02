@@ -8,7 +8,7 @@
  */
 
 import { esc, ICON } from "../ui.js";
-import { sayWord, saySound, coach, stopSpeech } from "../speech.js";
+import { sayWord, saySound, coach, cue, stopSpeech } from "../speech.js";
 import { sfx } from "../audio.js";
 import { startClock, optionButtons, markCorrect, shakeEl, wait } from "./common.js";
 
@@ -115,17 +115,19 @@ export function presentDefense(panel, spec, ctx) {
     });
 
     (async () => {
+      clock.pause();
       if (ctx.first) {
-        clock.pause();
         const lines = {
           letter: "You're on defense! Listen to the sound and tackle the letter that makes it.",
           grapheme: "You're on defense! Find the word that has the special sound inside it, and tackle it!",
           sight: "You're on defense! Listen to the word and tackle the exact word you hear.",
         };
         await coach(lines[variant] || lines.grapheme);
-        clock.resume();
+      } else {
+        await cue(spec.retry ? "Second chance!" : "Defense!");
       }
-      if (!done) speakPrompt();
+      if (!done) await speakPrompt();
+      clock.resume();
     })();
   });
 }

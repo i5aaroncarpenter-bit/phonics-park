@@ -9,7 +9,7 @@
  */
 
 import { esc, ICON } from "../ui.js";
-import { sayWord, saySound, coach, say, stopSpeech } from "../speech.js";
+import { sayWord, saySound, coach, cue, stopSpeech, stretchWord } from "../speech.js";
 import { sfx } from "../audio.js";
 import { startClock, optionButtons, markCorrect, shakeEl, wait } from "./common.js";
 
@@ -81,7 +81,7 @@ export function presentRush(panel, spec, ctx) {
       else speakPrompt();
     };
     const so = panel.querySelector("#sound-out");
-    if (so) so.onclick = () => { if (!busy) { sfx("tap"); import("../speech.js").then((m) => m.stretchWord(spec.item)); } };
+    if (so) so.onclick = () => { if (!busy) { sfx("tap"); stretchWord(spec.item); } };
 
     opts.querySelectorAll(".opt").forEach((btn) => {
       btn.onclick = async () => {
@@ -112,8 +112,8 @@ export function presentRush(panel, spec, ctx) {
     });
 
     (async () => {
+      clock.pause();
       if (ctx.first) {
-        clock.pause();
         const lines = {
           sound: "Listen to the sound, then tap the letter that makes it.",
           initial: "Look at the picture. Which sound does the word START with?",
@@ -122,9 +122,12 @@ export function presentRush(panel, spec, ctx) {
           pic: "Look at the picture. Tap the word that names it.",
         };
         await coach(lines[variant] || lines.hear);
-        clock.resume();
+      } else {
+        const cues = { sound: "Sound rush!", initial: "First sound!", hear: "Rush play!", read: "Read and rush!", pic: "Picture rush!" };
+        await cue(spec.retry ? "Second chance!" : cues[variant] || "Rush!");
       }
-      if (!done) speakPrompt();
+      if (!done) await speakPrompt();
+      clock.resume();
     })();
   });
 }

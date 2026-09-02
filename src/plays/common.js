@@ -10,9 +10,10 @@ export function startClock(bar, ms, onExpire) {
   let raf = 0;
   let paused = 0;
   let pauseAt = 0;
+  const elapsedAt = (now) => now - t0 - paused - (pauseAt ? now - pauseAt : 0);
   const tick = (now) => {
     if (dead) return;
-    const u = Math.min(1, (now - t0 - paused) / ms);
+    const u = Math.min(1, elapsedAt(now) / ms);
     if (bar) {
       bar.style.transform = `scaleX(${1 - u})`;
       bar.classList.toggle("low", u > 0.72);
@@ -26,7 +27,7 @@ export function startClock(bar, ms, onExpire) {
   };
   raf = requestAnimationFrame(tick);
   return {
-    elapsed: () => performance.now() - t0 - paused,
+    elapsed: () => elapsedAt(performance.now()),
     stop() { dead = true; cancelAnimationFrame(raf); },
     pause() { if (!pauseAt) pauseAt = performance.now(); },
     resume() { if (pauseAt) { paused += performance.now() - pauseAt; pauseAt = 0; } },
