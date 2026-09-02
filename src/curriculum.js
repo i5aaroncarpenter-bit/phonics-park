@@ -540,7 +540,7 @@ function buildRush(stage, save, variant) {
     };
   }
   if (variant === "pic" && item.pic) {
-    const others = similarWords(item, decoyPool, 2);
+    const others = similarWords(item, decoyPool.filter((x) => x.pic !== item.pic), 2);
     return {
       type: "rush", variant: "pic", item,
       prompt: { pic: item.pic, speakWord: item, label: "Which word is this?" },
@@ -661,7 +661,7 @@ export function buildGamePlan(stage, save, heat = 1) {
     if (usedWords.has(key) && guard < n * 4) continue;
     usedWords.add(key);
     spec.stageId = stage.id;
-    const mult = { readzone: 2.6, pass: 1.9, kick: 1.3, defense: 1.15 }[spec.type] || 1;
+    const mult = { readzone: 3.2, pass: 1.9, kick: 1.3, defense: 1.15 }[spec.type] || 1;
     spec.limitMs = Math.round((stage.baseMs || 8500) * mult / heat);
     plan.push(spec);
   }

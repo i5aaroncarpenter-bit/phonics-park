@@ -11,6 +11,7 @@ import { renderResult } from "./screens/result.js";
 import { playMatch } from "./screens/match.js";
 
 const app = document.getElementById("app");
+window.__pbDebug = /[?&]debug/.test(location.search);
 let save = loadSave();
 setMuted(!!save.mute);
 setSpeechRate(save.voiceRate || 0.92);

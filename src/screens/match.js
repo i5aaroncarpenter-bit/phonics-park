@@ -61,7 +61,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
           <div class="drive-track"><i id="drive-fill"></i><span class="drive-mascot" id="drive-mascot">${stage.opponent.mascot}</span></div>
           <small>${esc(stage.opponent.name)} drive</small>
         </div>
-        <div class="yard-chip" id="yard-chip">Ball on the ${START_YARD}</div>
+        <div class="yard-chip" id="yard-chip">${100 - START_YARD} yards to touchdown</div>
         <div class="coin-chip"><span class="coin-ico">${ICON.coin}</span><b id="coins">0</b></div>
         <div class="streak-badge" id="streak" hidden>🔥 ON FIRE</div>
         <div class="coach-bubble" id="coach" hidden><span class="coach-face">🧢</span><span id="coach-text"></span></div>
@@ -108,7 +108,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
     if (!stage.championship) app.querySelector("#qtr").textContent = G.overtime ? "OT" : `Q${Math.min(4, Math.floor((G.playNo / G.total) * 4) + 1)}`;
     app.querySelector("#drive-fill").style.width = `${Math.min(100, G.oppMeter)}%`;
     app.querySelector("#drive-mascot").style.left = `${Math.min(100, G.oppMeter)}%`;
-    app.querySelector("#yard-chip").textContent = G.yard >= 90 ? "RED ZONE! Ball on the " + G.yard : `Ball on the ${G.yard <= 50 ? G.yard : 100 - G.yard}`;
+    app.querySelector("#yard-chip").textContent = G.yard >= 85 ? `RED ZONE! ${100 - G.yard} yards to go` : `${100 - G.yard} yards to touchdown`;
     app.querySelector("#coins").textContent = G.coins;
     const sb = app.querySelector("#streak");
     sb.hidden = G.streak < 3;
@@ -198,6 +198,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
     await field.huddle(G.yard, spec.type !== "defense");
     field.setHype(0.2);
     const present = PRESENT[spec.type] || presentRush;
+    if (window.__pbDebug) { window.__pbSpec = spec; window.__pbSpecN = (window.__pbSpecN || 0) + 1; }
     const res = await present(panel, spec, ctxFor(spec));
     if (!G.alive) return;
 

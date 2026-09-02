@@ -56,6 +56,15 @@ export function speechAvailable() {
 export function initSpeech(prefName) {
   if (!speechAvailable()) return;
   voiceName = prefName || "";
+  // iOS/Safari only allow speech that starts inside a user gesture until the
+  // synth has spoken once, so prime it with a silent utterance on first tap.
+  document.addEventListener("pointerdown", () => {
+    try {
+      const u = new SpeechSynthesisUtterance(" ");
+      u.volume = 0;
+      synth.speak(u);
+    } catch { /* ignore */ }
+  }, { once: true, capture: true });
   const load = () => {
     const list = synth.getVoices();
     if (!list.length) return;
@@ -149,6 +158,7 @@ export async function say(text, opts = {}) {
     // Chrome can drop an utterance queued in the same tick as cancel().
     await new Promise((r) => setTimeout(r, 30));
   }
+  try { if (synth.paused) synth.resume(); } catch { /* ignore */ }
   const parts = Array.isArray(text) ? text : [text];
   let last;
   for (const p of parts) {
