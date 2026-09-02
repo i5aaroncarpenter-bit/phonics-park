@@ -1,53 +1,21 @@
 /**
- * Phonics Park audio — formant-ish kid voice, park SFX, Saturday organ loop.
- * Mute follows save.mute. Unlock AudioContext on first tap.
+ * Stadium audio for Phonics Bowl — all synthesized with Web Audio so the game
+ * ships with zero binary assets. Whistles, crowd, tackles, kicks, fanfares
+ * and two original marching-band style loops.
  */
+
+import { setSpeechMuted, onSpeaking } from "./speech.js";
 
 let ctx = null;
 let master = null;
+let musicBus = null;
+let sfxBus = null;
+let noiseBuf = null;
 let muted = false;
 let unlocked = false;
-let noiseBuf = null;
-let musicTimer = null;
-let musicStep = 0;
-let musicGain = null;
-
-const PHON = {
-  m: { kind: "nasal", f0: 190, f1: 270, f2: 1180, chirp: 180, dur: 0.28 },
-  n: { kind: "nasal", f0: 195, f1: 270, f2: 1750, chirp: 210, dur: 0.28 },
-  s: { kind: "fric", hp: 4200, chirp: 2200, dur: 0.22 },
-  a: { kind: "vowel", f0: 210, f1: 780, f2: 1480, f3: 2500, chirp: 440, dur: 0.32 },
-  i: { kind: "vowel", f0: 230, f1: 400, f2: 2100, f3: 2900, chirp: 660, dur: 0.3 },
-  o: { kind: "vowel", f0: 200, f1: 520, f2: 900, f3: 2400, chirp: 330, dur: 0.32 },
-  e: { kind: "vowel", f0: 220, f1: 530, f2: 1850, f3: 2600, chirp: 520, dur: 0.26 },
-  t: { kind: "stop", hp: 2800, chirp: 800, dur: 0.09 },
-  p: { kind: "stop", hp: 900, chirp: 700, dur: 0.08 },
-  d: { kind: "vstop", f0: 160, hp: 1800, chirp: 500, dur: 0.1 },
-  c: { kind: "stop", hp: 1600, chirp: 600, dur: 0.09 },
-  k: { kind: "stop", hp: 1600, chirp: 600, dur: 0.09 },
-  ck: { kind: "stop", hp: 1600, chirp: 600, dur: 0.1 },
-  g: { kind: "vstop", f0: 140, hp: 1200, chirp: 390, dur: 0.11 },
-  b: { kind: "vstop", f0: 140, hp: 700, chirp: 280, dur: 0.1 },
-  h: { kind: "fric", hp: 900, chirp: 480, dur: 0.14, quiet: 0.12 },
-  l: { kind: "vowel", f0: 190, f1: 380, f2: 1200, f3: 2500, chirp: 300, dur: 0.2 },
-  r: { kind: "vowel", f0: 180, f1: 450, f2: 1100, f3: 1600, chirp: 260, dur: 0.2 },
-  f: { kind: "fric", hp: 1600, chirp: 1400, dur: 0.18 },
-  sh: { kind: "fric", hp: 2200, bp: 2800, chirp: 1600, dur: 0.26 },
-  ch: { kind: "affric", hp: 2400, chirp: 1200, dur: 0.18 },
-  th: { kind: "fric", hp: 1400, bp: 1800, chirp: 900, dur: 0.22, quiet: 0.14 },
-  st: { kind: "blend", parts: ["s", "t"] },
-  sl: { kind: "blend", parts: ["s", "l"] },
-  tr: { kind: "blend", parts: ["t", "r"] },
-  bl: { kind: "blend", parts: ["b", "l"] },
-  ai: { kind: "vowel", f0: 210, f1: 520, f2: 1900, f3: 2600, chirp: 494, dur: 0.36, glide: [480, 2100] },
-  oa: { kind: "vowel", f0: 195, f1: 480, f2: 850, f3: 2300, chirp: 349, dur: 0.36, glide: [400, 780] },
-  ee: { kind: "vowel", f0: 240, f1: 300, f2: 2300, f3: 3100, chirp: 659, dur: 0.34 },
-  "long-a": { kind: "vowel", f0: 215, f1: 560, f2: 1800, f3: 2600, chirp: 494, dur: 0.36, glide: [480, 2100] },
-  "long-i": { kind: "vowel", f0: 210, f1: 700, f2: 1300, f3: 2500, chirp: 392, dur: 0.38, glide: [380, 2200] },
-  "long-o": { kind: "vowel", f0: 195, f1: 500, f2: 880, f3: 2300, chirp: 349, dur: 0.36, glide: [400, 780] },
-  "long-e": { kind: "vowel", f0: 240, f1: 300, f2: 2300, f3: 3100, chirp: 659, dur: 0.34 },
-  silent: { kind: "silent", dur: 0.04 },
-};
+let crowdNode = null;
+let crowdGain = null;
+let seq = null;
 
 function ensure() {
   if (ctx) return ctx;
@@ -55,420 +23,317 @@ function ensure() {
   if (!AC) return null;
   ctx = new AC();
   master = ctx.createGain();
-  master.gain.value = 0.85;
-  master.connect(ctx.destination);
-  noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  master.gain.value = 0.9;
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -14;
+  comp.ratio.value = 6;
+  master.connect(comp);
+  comp.connect(ctx.destination);
+  musicBus = ctx.createGain();
+  musicBus.gain.value = 0.16;
+  musicBus.connect(master);
+  sfxBus = ctx.createGain();
+  sfxBus.gain.value = 0.9;
+  sfxBus.connect(master);
+  noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   return ctx;
 }
 
-export function setMuted(flag) {
-  muted = !!flag;
-  if (musicGain) musicGain.gain.value = muted ? 0 : 0.11;
-  if (muted) stopMusic();
-  else if (unlocked) startMusic();
+export async function unlock() {
+  const c = ensure();
+  if (!c) return;
+  try { if (c.state === "suspended") await c.resume(); } catch { /* ignore */ }
+  unlocked = true;
 }
 
 export function isMuted() {
   return muted;
 }
 
-export async function unlock() {
+export function setMuted(flag) {
+  muted = !!flag;
+  setSpeechMuted(muted);
+  if (master) master.gain.value = muted ? 0 : 0.9;
+}
+
+function ready() {
   const c = ensure();
-  if (!c) return;
-  try {
-    if (c.state === "suspended") await c.resume();
-  } catch {
-    /* ignore */
-  }
-  unlocked = true;
-  if (!muted) startMusic();
+  return c && !muted && c.state === "running" ? c : null;
 }
 
-export function playPhoneme(name) {
-  const c = ensure();
-  if (!c || muted || c.state !== "running") return 0.2;
-  const key = String(name || "").toLowerCase();
-  const spec = PHON[key] || PHON.a;
-  const t = c.currentTime + 0.01;
-  return schedulePhoneme(c, t, spec, key);
-}
+/* ---------- building blocks ---------- */
 
-export function playWord(word, graphemes = [], kind = "") {
-  const c = ensure();
-  if (!c || muted || c.state !== "running") return 0.4;
-  const units = unitsFor(word, graphemes, kind);
-  let t = c.currentTime + 0.02;
-  for (const u of units) {
-    const spec = PHON[u] || PHON.a;
-    const used = schedulePhoneme(c, t, spec, u);
-    t += used + 0.045;
-  }
-  return Math.max(0.3, t - c.currentTime);
-}
-
-function unitsFor(word, graphemes, kind) {
-  if (graphemes && graphemes.length) {
-    return graphemes.map((g) => mapGrapheme(g, kind, graphemes));
-  }
-  return [String(word || "a").toLowerCase()];
-}
-
-function mapGrapheme(g, kind, graphemes) {
-  const x = String(g).toLowerCase();
-  if (x === "e" && kind === "silent-e" && graphemes[graphemes.length - 1] === "e") return "silent";
-  if (kind === "silent-e" && (x === "a" || x === "i" || x === "o" || x === "u")) return `long-${x}`;
-  if (x === "ai") return "long-a";
-  if (x === "oa") return "long-o";
-  if (x === "ee") return "long-e";
-  return x;
-}
-
-function schedulePhoneme(c, t, spec, key) {
-  if (spec.kind === "blend") {
-    let tt = t;
-    let total = 0;
-    for (const p of spec.parts) {
-      const s = PHON[p] || PHON.a;
-      const d = schedulePhoneme(c, tt, s, p);
-      tt += d * 0.72;
-      total += d * 0.72;
-    }
-    chirp(c, t, spec.parts ? (PHON[spec.parts[0]]?.chirp || 500) : 500, 0.12, 0.08);
-    return total + 0.04;
-  }
-  if (spec.kind === "silent") {
-    chirp(c, t, 180, 0.05, 0.03);
-    return spec.dur;
-  }
-  if (spec.kind === "vowel" || spec.kind === "nasal") {
-    vowel(c, t, spec);
-    chirp(c, t, spec.chirp, spec.dur * 0.55, 0.1);
-    return spec.dur;
-  }
-  if (spec.kind === "fric") {
-    fric(c, t, spec);
-    chirp(c, t + 0.02, spec.chirp, spec.dur * 0.4, 0.06);
-    return spec.dur;
-  }
-  if (spec.kind === "stop" || spec.kind === "vstop") {
-    stopBurst(c, t, spec);
-    chirp(c, t, spec.chirp, 0.07, 0.1);
-    return spec.dur + 0.04;
-  }
-  if (spec.kind === "affric") {
-    stopBurst(c, t, { hp: 2000, dur: 0.04 });
-    fric(c, t + 0.04, { hp: 2400, dur: 0.12 });
-    chirp(c, t, spec.chirp, 0.1, 0.08);
-    return spec.dur;
-  }
-  chirp(c, t, 400, 0.15, 0.1);
-  return 0.16;
-}
-
-function outGain(c, t, dur, peak) {
+function env(c, t, dur, peak, dest, attack = 0.012) {
   const g = c.createGain();
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(Math.max(0.001, peak), t + 0.018);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.001, peak), t + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  g.connect(master);
+  g.connect(dest || sfxBus);
   return g;
 }
 
-function vowel(c, t, spec) {
-  const dur = spec.dur;
-  const g = outGain(c, t, dur, spec.kind === "nasal" ? 0.16 : 0.2);
-  const osc = c.createOscillator();
-  osc.type = "sawtooth";
-  osc.frequency.setValueAtTime(spec.f0, t);
-  if (spec.glide) {
-    osc.frequency.linearRampToValueAtTime(spec.f0 * 1.06, t + dur);
-  }
-  const vib = c.createOscillator();
-  const vg = c.createGain();
-  vib.frequency.value = 5.2;
-  vg.gain.value = 3.2;
-  vib.connect(vg);
-  vg.connect(osc.frequency);
-  const formants = [
-    [spec.f1, 7, 1],
-    [spec.f2, 9, 0.55],
-    [spec.f3 || 2600, 11, 0.22],
-  ];
-  for (const [freq, q, amt] of formants) {
-    const bp = c.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.setValueAtTime(freq, t);
-    if (spec.glide) bp.frequency.linearRampToValueAtTime(spec.glide[formants.indexOf(formants.find((f) => f[0] === freq)) === 1 ? 1 : 0] || freq, t + dur);
-    bp.Q.value = q;
-    const fg = c.createGain();
-    fg.gain.value = amt;
-    osc.connect(bp);
-    bp.connect(fg);
-    fg.connect(g);
-  }
-  osc.start(t);
-  osc.stop(t + dur + 0.02);
-  vib.start(t);
-  vib.stop(t + dur + 0.02);
+function tone(c, t, freq, dur, type = "square", peak = 0.12, dest, glideTo) {
+  const o = c.createOscillator();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  if (glideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, glideTo), t + dur);
+  const g = env(c, t, dur, peak, dest);
+  o.connect(g);
+  o.start(t);
+  o.stop(t + dur + 0.02);
+  return o;
 }
 
-function noiseSrc(c, t, dur) {
+function noise(c, t, dur, { type = "highpass", freq = 2000, q = 0.8, peak = 0.2, dest, sweepTo } = {}) {
   const src = c.createBufferSource();
   src.buffer = noiseBuf;
   src.loop = true;
+  const f = c.createBiquadFilter();
+  f.type = type;
+  f.frequency.setValueAtTime(freq, t);
+  if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t + dur);
+  f.Q.value = q;
+  const g = env(c, t, dur, peak, dest);
+  src.connect(f);
+  f.connect(g);
   src.start(t);
-  src.stop(t + dur + 0.02);
-  return src;
+  src.stop(t + dur + 0.03);
 }
 
-function fric(c, t, spec) {
-  const dur = spec.dur;
-  const g = outGain(c, t, dur, spec.quiet || 0.18);
-  const src = noiseSrc(c, t, dur);
-  const f = c.createBiquadFilter();
-  f.type = spec.bp ? "bandpass" : "highpass";
-  f.frequency.value = spec.bp || spec.hp || 3000;
-  f.Q.value = spec.bp ? 2.2 : 0.8;
-  src.connect(f);
-  f.connect(g);
-}
+/* ---------- SFX ---------- */
 
-function stopBurst(c, t, spec) {
-  const dur = spec.dur || 0.08;
-  const g = outGain(c, t, dur, 0.22);
-  const src = noiseSrc(c, t, dur);
-  const f = c.createBiquadFilter();
-  f.type = "highpass";
-  f.frequency.value = spec.hp || 1200;
-  src.connect(f);
-  f.connect(g);
-  if (spec.f0) {
-    const osc = c.createOscillator();
-    osc.type = "triangle";
-    osc.frequency.value = spec.f0;
-    const og = outGain(c, t, dur + 0.04, 0.12);
-    osc.connect(og);
-    osc.start(t);
-    osc.stop(t + dur + 0.04);
-  }
-}
-
-function chirp(c, t, freq, dur, peak) {
-  const osc = c.createOscillator();
-  osc.type = "triangle";
-  osc.frequency.setValueAtTime(freq * 0.92, t);
-  osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq * 1.15), t + dur);
-  const g = outGain(c, t, dur, peak || 0.08);
-  osc.connect(g);
-  osc.start(t);
-  osc.stop(t + dur + 0.01);
-}
-
-function tone(c, t, freq, dur, type, peak) {
-  const osc = c.createOscillator();
-  osc.type = type || "square";
-  osc.frequency.setValueAtTime(freq, t);
-  const g = outGain(c, t, dur, peak || 0.12);
-  osc.connect(g);
-  osc.start(t);
-  osc.stop(t + dur + 0.01);
-}
-
-export function sfx(name) {
-  const c = ensure();
-  if (!c || muted || c.state !== "running") return;
+export function sfx(name, opt = {}) {
+  const c = ready();
+  if (!c) return;
   const t = c.currentTime + 0.005;
   switch (name) {
-    case "bat":
-    case "crack":
-      batCrack(c, t);
-      break;
-    case "cheer":
-      crowdCheer(c, t);
-      break;
-    case "organ":
-      organSting(c, t);
-      break;
-    case "umpire":
-      umpire(c, t);
-      break;
-    case "glove":
-    case "pop":
-      glovePop(c, t);
-      break;
-    case "miss":
-    case "boop":
-      missBoop(c, t);
-      break;
-    case "strike":
-      umpire(c, t);
-      tone(c, t + 0.18, 196, 0.12, "square", 0.1);
-      break;
-    default:
-      chirp(c, t, 520, 0.12, 0.1);
+    case "whistle": whistle(c, t, opt.long); break;
+    case "snap": tone(c, t, 220, 0.05, "square", 0.1, sfxBus, 90); noise(c, t, 0.05, { freq: 3000, peak: 0.12 }); break;
+    case "throw": noise(c, t, 0.35, { type: "bandpass", freq: 600, sweepTo: 2600, q: 1.5, peak: 0.18 }); break;
+    case "catch": tone(c, t, 160, 0.09, "sine", 0.2, sfxBus, 90); noise(c, t, 0.06, { type: "lowpass", freq: 900, peak: 0.15 }); break;
+    case "tackle": tackle(c, t); break;
+    case "kick": tone(c, t, 120, 0.12, "sine", 0.3, sfxBus, 55); noise(c, t, 0.1, { type: "lowpass", freq: 1200, peak: 0.2 }); break;
+    case "post": tone(c, t, 880, 0.5, "triangle", 0.14, sfxBus, 860); tone(c, t, 1320, 0.3, "sine", 0.06); break;
+    case "run": for (let i = 0; i < 4; i++) noise(c, t + i * 0.13, 0.06, { type: "lowpass", freq: 700, peak: 0.08 }); break;
+    case "cheer": crowdCheer(c, t, opt.big); break;
+    case "aww": crowdAww(c, t); break;
+    case "touchdown": fanfare(c, t); crowdCheer(c, t + 0.05, true); break;
+    case "firstdown": chime(c, t, [659.25, 783.99, 1046.5]); break;
+    case "coin": chime(c, t, [1046.5, 1318.5], 0.07, 0.07); break;
+    case "coins": for (let i = 0; i < 5; i++) chime(c, t + i * 0.07, [1046.5 + i * 120], 0.06, 0.06); break;
+    case "star": chime(c, t, [523.25, 659.25, 783.99, 1046.5], 0.1, 0.1); break;
+    case "click": tone(c, t, 660, 0.05, "triangle", 0.08, sfxBus, 520); break;
+    case "tap": tone(c, t, 520, 0.06, "sine", 0.1, sfxBus, 600); break;
+    case "wrong": tone(c, t, 240, 0.18, "square", 0.09, sfxBus, 120); break;
+    case "buzzer": tone(c, t, 110, 0.7, "sawtooth", 0.16); tone(c, t, 112, 0.7, "square", 0.08); break;
+    case "fire": fireSting(c, t); break;
+    case "drumroll": for (let i = 0; i < 12; i++) noise(c, t + i * 0.055, 0.04, { type: "bandpass", freq: 1800, q: 1.2, peak: 0.1 + i * 0.01 }); break;
+    case "hike": tone(c, t, 300, 0.08, "square", 0.08, sfxBus, 220); tone(c, t + 0.1, 380, 0.1, "square", 0.08, sfxBus, 260); break;
+    case "win": fanfare(c, t); fanfare(c, t + 0.9, true); crowdCheer(c, t, true); break;
+    case "lose": tone(c, t, 330, 0.3, "triangle", 0.1, sfxBus, 262); tone(c, t + 0.35, 262, 0.5, "triangle", 0.1, sfxBus, 196); break;
+    case "trophy": chime(c, t, [523.25, 659.25, 783.99, 1046.5, 1318.5], 0.14, 0.12); break;
+    default: tone(c, t, 500, 0.08, "triangle", 0.08);
   }
 }
 
-function batCrack(c, t) {
-  const g = outGain(c, t, 0.22, 0.32);
-  const src = noiseSrc(c, t, 0.12);
-  const hp = c.createBiquadFilter();
-  hp.type = "highpass";
-  hp.frequency.value = 1800;
-  src.connect(hp);
-  hp.connect(g);
-  tone(c, t, 140, 0.08, "square", 0.16);
-  tone(c, t + 0.02, 90, 0.1, "triangle", 0.12);
+function whistle(c, t, long) {
+  const dur = long ? 0.9 : 0.45;
+  const o = c.createOscillator();
+  o.type = "sine";
+  o.frequency.setValueAtTime(2300, t);
+  const trill = c.createOscillator();
+  trill.frequency.value = 38;
+  const tg = c.createGain();
+  tg.gain.value = 140;
+  trill.connect(tg);
+  tg.connect(o.frequency);
+  const g = env(c, t, dur, 0.16, sfxBus, 0.02);
+  o.connect(g);
+  o.start(t); o.stop(t + dur + 0.02);
+  trill.start(t); trill.stop(t + dur + 0.02);
+  noise(c, t, dur, { type: "bandpass", freq: 2300, q: 8, peak: 0.05 });
 }
 
-function crowdCheer(c, t) {
-  for (let i = 0; i < 6; i++) {
-    const src = noiseSrc(c, t + i * 0.05, 0.55);
-    const bp = c.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.value = 400 + i * 180;
-    bp.Q.value = 1.2;
-    const g = outGain(c, t + i * 0.04, 0.7, 0.07);
-    src.connect(bp);
-    bp.connect(g);
+function tackle(c, t) {
+  tone(c, t, 90, 0.18, "sine", 0.35, sfxBus, 40);
+  noise(c, t, 0.14, { type: "lowpass", freq: 700, peak: 0.28 });
+  noise(c, t + 0.02, 0.2, { type: "bandpass", freq: 300, q: 1, peak: 0.12 });
+}
+
+function crowdCheer(c, t, big) {
+  const n = big ? 10 : 6;
+  for (let i = 0; i < n; i++) {
+    noise(c, t + i * 0.05, big ? 1.6 : 0.8, { type: "bandpass", freq: 350 + i * 160, q: 1.1, peak: big ? 0.07 : 0.05 });
   }
-  tone(c, t + 0.05, 523, 0.18, "triangle", 0.06);
-  tone(c, t + 0.18, 659, 0.2, "triangle", 0.06);
+  if (big) {
+    for (let i = 0; i < 3; i++) noise(c, t + 0.3 + i * 0.3, 0.7, { type: "bandpass", freq: 900 + i * 300, q: 2, peak: 0.04 });
+  }
 }
 
-function organSting(c, t) {
-  const notes = [261.63, 329.63, 392.0, 523.25];
+function crowdAww(c, t) {
+  for (let i = 0; i < 4; i++) {
+    const o = c.createOscillator();
+    o.type = "sawtooth";
+    o.frequency.setValueAtTime(220 + i * 40, t);
+    o.frequency.exponentialRampToValueAtTime(150 + i * 25, t + 0.7);
+    const f = c.createBiquadFilter();
+    f.type = "lowpass"; f.frequency.value = 900;
+    const g = env(c, t + i * 0.03, 0.7, 0.035, sfxBus, 0.08);
+    o.connect(f); f.connect(g);
+    o.start(t); o.stop(t + 0.8);
+  }
+  noise(c, t, 0.7, { type: "bandpass", freq: 500, q: 1, peak: 0.05 });
+}
+
+function chime(c, t, notes, step = 0.09, len = 0.25) {
   notes.forEach((f, i) => {
-    const osc = c.createOscillator();
-    osc.type = "square";
-    osc.frequency.value = f;
-    const g = outGain(c, t + i * 0.09, 0.22, 0.09);
-    const f1 = c.createBiquadFilter();
-    f1.type = "lowpass";
-    f1.frequency.value = 1800;
-    osc.connect(f1);
-    f1.connect(g);
-    osc.start(t + i * 0.09);
-    osc.stop(t + i * 0.09 + 0.24);
+    tone(c, t + i * step, f, len, "triangle", 0.12);
+    tone(c, t + i * step, f * 2, len * 0.6, "sine", 0.04);
   });
 }
 
-function umpire(c, t) {
-  vowel(c, t, { f0: 140, f1: 600, f2: 1100, f3: 2200, dur: 0.16 });
-  vowel(c, t + 0.17, { f0: 160, f1: 500, f2: 900, f3: 2000, dur: 0.22 });
-  chirp(c, t, 180, 0.14, 0.1);
-}
-
-function glovePop(c, t) {
-  tone(c, t, 90, 0.07, "sine", 0.18);
-  const g = outGain(c, t, 0.1, 0.2);
-  const src = noiseSrc(c, t, 0.08);
-  const lp = c.createBiquadFilter();
-  lp.type = "lowpass";
-  lp.frequency.value = 900;
-  src.connect(lp);
-  lp.connect(g);
-}
-
-function missBoop(c, t) {
-  const osc = c.createOscillator();
-  osc.type = "square";
-  osc.frequency.setValueAtTime(240, t);
-  osc.frequency.exponentialRampToValueAtTime(110, t + 0.18);
-  const g = outGain(c, t, 0.2, 0.12);
-  osc.connect(g);
-  osc.start(t);
-  osc.stop(t + 0.22);
-}
-
-/* Tiny original Saturday-morning ballpark loop (not a licensed tune). */
-const MELODY = [
-  [523.25, 1], [587.33, 1], [659.25, 1], [783.99, 1],
-  [659.25, 1], [587.33, 1], [523.25, 2],
-  [392.0, 1], [440.0, 1], [392.0, 1], [329.63, 1],
-  [261.63, 2], [0, 2],
-];
-const BASS = [130.81, 130.81, 174.61, 196.0, 130.81, 130.81, 196.0, 174.61];
-
-export function startMusic() {
-  const c = ensure();
-  if (!c || muted || musicTimer) return;
-  if (!musicGain) {
-    musicGain = c.createGain();
-    musicGain.gain.value = 0.1;
-    musicGain.connect(master);
-  } else {
-    musicGain.gain.value = 0.1;
+/* Original stadium horn riff. */
+function fanfare(c, t, alt) {
+  const riff = alt
+    ? [[392, 0.12], [523.25, 0.12], [659.25, 0.12], [783.99, 0.3], [659.25, 0.12], [783.99, 0.45]]
+    : [[392, 0.11], [392, 0.11], [392, 0.11], [523.25, 0.32], [659.25, 0.12], [783.99, 0.5]];
+  let tt = t;
+  for (const [f, d] of riff) {
+    for (const [mult, type, pk] of [[1, "sawtooth", 0.09], [1.003, "square", 0.05], [0.5, "triangle", 0.07]]) {
+      const o = c.createOscillator();
+      o.type = type;
+      o.frequency.value = f * mult;
+      const fl = c.createBiquadFilter();
+      fl.type = "lowpass";
+      fl.frequency.setValueAtTime(900, tt);
+      fl.frequency.exponentialRampToValueAtTime(3200, tt + 0.05);
+      const g = env(c, tt, d, pk, sfxBus, 0.02);
+      o.connect(fl); fl.connect(g);
+      o.start(tt); o.stop(tt + d + 0.03);
+    }
+    tt += d + 0.03;
   }
-  musicStep = 0;
-  const bpm = 112;
-  const stepMs = (60 / bpm) * 1000 / 2;
-  const tick = () => {
-    if (muted || !ctx) return;
-    const t = ctx.currentTime + 0.03;
-    const beat = musicStep % 8;
-    const [freq, len] = MELODY[musicStep % MELODY.length];
-    if (freq) {
-      const osc = ctx.createOscillator();
-      osc.type = "square";
-      osc.frequency.value = freq;
-      const filt = ctx.createBiquadFilter();
-      filt.type = "lowpass";
-      filt.frequency.value = 1400;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.09, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14 * len);
-      osc.connect(filt);
-      filt.connect(g);
-      g.connect(musicGain);
-      osc.start(t);
-      osc.stop(t + 0.16 * len);
+}
+
+function fireSting(c, t) {
+  [[523.25, 0], [659.25, 0.07], [783.99, 0.14], [1046.5, 0.21], [1318.5, 0.3]].forEach(([f, dt]) => {
+    tone(c, t + dt, f, 0.22, "square", 0.08);
+    tone(c, t + dt, f / 2, 0.22, "sawtooth", 0.05);
+  });
+  noise(c, t, 0.5, { type: "bandpass", freq: 800, sweepTo: 4000, q: 1.5, peak: 0.1 });
+}
+
+/* ---------- ambient crowd ---------- */
+
+export function crowd(level = 0.4) {
+  const c = ready();
+  if (!c) return;
+  if (!crowdNode) {
+    crowdNode = c.createBufferSource();
+    crowdNode.buffer = noiseBuf;
+    crowdNode.loop = true;
+    const f = c.createBiquadFilter();
+    f.type = "bandpass";
+    f.frequency.value = 500;
+    f.Q.value = 0.7;
+    crowdGain = c.createGain();
+    crowdGain.gain.value = 0;
+    crowdNode.connect(f);
+    f.connect(crowdGain);
+    crowdGain.connect(sfxBus);
+    crowdNode.start();
+  }
+  crowdGain.gain.cancelScheduledValues(c.currentTime);
+  crowdGain.gain.setTargetAtTime(level * 0.06, c.currentTime, 0.6);
+}
+
+export function crowdOff() {
+  if (crowdGain && ctx) crowdGain.gain.setTargetAtTime(0, ctx.currentTime, 0.4);
+}
+
+/* ---------- music sequencer ---------- */
+
+const NOTE = { C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.0, A3: 220.0, B3: 246.94, C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.0, A4: 440.0, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99 };
+
+const TRACKS = {
+  menu: {
+    bpm: 128,
+    kick:  [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0],
+    snare: [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1],
+    hat:   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    bass:  ["C3", 0, "C3", 0, "G3", 0, "G3", 0, "A3", 0, "A3", 0, "F3", 0, "G3", 0],
+    lead:  ["C5", 0, "E5", 0, "G5", 0, "E5", 0, "D5", 0, "C5", 0, "D5", "E5", 0, 0,
+            "C5", 0, "E5", 0, "G5", 0, "A4", 0, "B4", 0, "C5", 0, "D5", 0, 0, 0],
+  },
+  game: {
+    bpm: 140,
+    kick:  [1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+    snare: [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1],
+    hat:   [1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1],
+    bass:  ["E3", 0, 0, "E3", 0, 0, "G3", 0, "E3", 0, 0, "E3", 0, "D3", 0, 0],
+    lead:  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            "E4", 0, "G4", 0, "A4", 0, 0, 0, "G4", 0, "E4", 0, 0, 0, 0, 0],
+  },
+  victory: {
+    bpm: 120,
+    kick:  [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+    snare: [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1],
+    hat:   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    bass:  ["C3", 0, "G3", 0, "C3", 0, "G3", 0, "F3", 0, "C3", 0, "G3", 0, "G3", 0],
+    lead:  ["C5", "C5", "G4", 0, "E5", 0, "C5", 0, "D5", 0, "E5", "D5", "C5", 0, 0, 0,
+            "E5", "E5", "C5", 0, "G5", 0, "E5", 0, "D5", 0, "C5", "D5", "E5", 0, 0, 0],
+  },
+};
+
+export function startMusic(track = "menu") {
+  const c = ensure();
+  if (!c) return;
+  if (seq && seq.track === track) return;
+  stopMusic();
+  const T = TRACKS[track] || TRACKS.menu;
+  const stepDur = 60 / T.bpm / 4;
+  seq = { track, step: 0, next: c.currentTime + 0.05, timer: 0 };
+  const schedule = () => {
+    if (!seq || muted) return;
+    while (seq.next < c.currentTime + 0.18) {
+      const t = seq.next;
+      const i = seq.step % 16;
+      const li = seq.step % T.lead.length;
+      if (T.kick[i]) { tone(c, t, 150, 0.16, "sine", 0.5, musicBus, 45); }
+      if (T.snare[i]) noise(c, t, 0.12, { type: "bandpass", freq: 1900, q: 0.9, peak: 0.28, dest: musicBus });
+      if (T.hat[i]) noise(c, t, 0.035, { type: "highpass", freq: 7000, peak: i % 2 ? 0.07 : 0.11, dest: musicBus });
+      if (T.bass[i]) tone(c, t, NOTE[T.bass[i]], stepDur * 1.6, "triangle", 0.45, musicBus);
+      if (T.lead[li]) {
+        tone(c, t, NOTE[T.lead[li]], stepDur * 1.5, "square", 0.13, musicBus);
+        tone(c, t, NOTE[T.lead[li]] * 0.5, stepDur * 1.5, "sawtooth", 0.05, musicBus);
+      }
+      seq.next += stepDur;
+      seq.step += 1;
     }
-    const bass = BASS[beat];
-    const b = ctx.createOscillator();
-    b.type = "triangle";
-    b.frequency.value = bass;
-    const bg = ctx.createGain();
-    bg.gain.setValueAtTime(0.0001, t);
-    bg.gain.exponentialRampToValueAtTime(0.08, t + 0.02);
-    bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
-    b.connect(bg);
-    bg.connect(musicGain);
-    b.start(t);
-    b.stop(t + 0.24);
-    if (beat === 2 || beat === 6) {
-      const src = noiseSrc(ctx, t, 0.06);
-      const hp = ctx.createBiquadFilter();
-      hp.type = "highpass";
-      hp.frequency.value = 2000;
-      const ng = ctx.createGain();
-      ng.gain.setValueAtTime(0.05, t);
-      ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-      src.connect(hp);
-      hp.connect(ng);
-      ng.connect(musicGain);
-    }
-    musicStep += 1;
   };
-  tick();
-  musicTimer = setInterval(tick, stepMs);
+  schedule();
+  seq.timer = setInterval(schedule, 60);
 }
 
 export function stopMusic() {
-  if (musicTimer) {
-    clearInterval(musicTimer);
-    musicTimer = null;
+  if (seq) {
+    clearInterval(seq.timer);
+    seq = null;
   }
-  if (musicGain) musicGain.gain.value = 0;
 }
 
-document.addEventListener(
-  "pointerdown",
-  () => {
-    unlock();
-  },
-  { once: true, capture: true }
-);
+let musicLevel = 0.16;
+export function musicVolume(v) {
+  musicLevel = v;
+  if (musicBus) musicBus.gain.setTargetAtTime(v, ctx.currentTime, 0.3);
+}
+
+// Duck the music while the voice is talking so words stay crystal clear.
+onSpeaking((isSpeaking) => {
+  if (!musicBus || !ctx) return;
+  musicBus.gain.setTargetAtTime(isSpeaking ? musicLevel * 0.3 : musicLevel, ctx.currentTime, 0.15);
+});
+
+document.addEventListener("pointerdown", () => { unlock(); }, { once: true, capture: true });
