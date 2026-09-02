@@ -1,12 +1,13 @@
 {
-  "name": "phonics-park",
-  "version": "1.0.0",
+  "name": "phonics-bowl",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Phonics Park — Sound it out. Swing for the fences. A baseball phonics game for early readers.",
+  "description": "Phonics Bowl — Read it. Run it. Score! A football phonics game for early readers.",
   "scripts": {
-    "build": "node -e \"console.log('Phonics Park: static build, nothing to compile.')\"",
-    "start": "node server.mjs"
+    "build": "node -e \"console.log('Phonics Bowl: static build, nothing to compile.')\"",
+    "start": "node server.mjs",
+    "check": "for f in $(find src -name '*.js'); do node --check $f || exit 1; done && echo syntax ok"
   },
   "engines": {
     "node": ">=18"

@@ -1,73 +1,75 @@
-export function renderTitle(app, { save, onPlay, onToggleMute }) {
+import { esc, ICON, helmetSVG, footballSVG, muteButton } from "../ui.js";
+import { teamColors, helmetStyle } from "../save.js";
+import { createField } from "../field.js";
+import { sfx } from "../audio.js";
+
+export function renderTitle(app, { save, onPlay, onLocker, onTrophies, onClipboard, onToggleMute }) {
+  const colors = teamColors(save);
   app.innerHTML = `
-    <section class="screen park-bg title-screen">
-      <div class="bunting">${"<i></i>".repeat(13)}</div>
-      <div class="logo-lockup">
-        <h1>Phonics Park</h1>
-        <p class="tagline">Sound it out. Swing for the fences.</p>
-      </div>
-      <div class="player-card">
-        <div class="jersey" aria-hidden="true">
-          <div class="jersey-head"></div>
-          <div class="jersey-body"><div class="jersey-num" id="jersey-face">${save.jersey}</div></div>
+    <section class="screen title-screen">
+      <canvas class="bg-stadium" id="bg"></canvas>
+      <div class="title-overlay">
+        <div class="logo-lockup">
+          <div class="logo-ball">${footballSVG(64)}</div>
+          <h1><span>PHONICS</span><span>BOWL</span></h1>
+          <p class="tagline">Read it. Run it. Score!</p>
         </div>
-        <div class="player-fields">
-          <label for="kid-name">Player</label>
-          <input id="kid-name" type="text" maxlength="16" value="${esc(save.name)}" autocomplete="off" />
-          <label>Jersey</label>
-          <div class="jersey-row">
-            <button class="btn icon-btn" id="j-minus" type="button" aria-label="Lower number">−</button>
-            <input id="jersey" type="number" min="1" max="99" value="${save.jersey}" />
-            <button class="btn icon-btn" id="j-plus" type="button" aria-label="Raise number">+</button>
+        <div class="player-card">
+          <div class="card-helmet">${helmetSVG({ primary: colors.primary, secondary: colors.secondary, style: helmetStyle(save), size: 110, number: save.number })}</div>
+          <div class="player-fields">
+            <label for="kid-name">Star player</label>
+            <input id="kid-name" type="text" maxlength="14" value="${esc(save.name)}" autocomplete="off" autocapitalize="words" />
+            <div class="team-line">${esc(save.team.name)} · #${save.number}</div>
           </div>
         </div>
+        <div class="title-actions">
+          <button class="btn btn-go btn-huge" id="play-btn" type="button">${ICON.play} PLAY</button>
+          <div class="row">
+            <button class="btn btn-soft" id="locker-btn" type="button">🧢 Locker</button>
+            <button class="btn btn-soft" id="trophy-btn" type="button">${ICON.trophy} Trophies</button>
+            <button class="btn btn-soft" id="clip-btn" type="button">${ICON.clipboard} Coach</button>
+          </div>
+        </div>
+        <p class="credits">Made for ${esc(save.name)} · ${save.coins} coins · ${Object.values(save.wins).filter(Boolean).length} wins</p>
       </div>
-      <div class="title-actions">
-        <button class="btn icon-btn" id="mute-btn" type="button" aria-label="Mute">${save.mute ? "🔇" : "🔊"}</button>
-        <button class="btn btn-go" id="play-btn" type="button">Play Ball!</button>
-      </div>
-      <p class="credits">Made for Ezekiel</p>
+      <div class="corner-actions" id="corner"></div>
     </section>
   `;
 
+  const bg = app.querySelector("#bg");
+  const field = createField(bg, {
+    home: { primary: colors.primary, secondary: colors.secondary, helmet: helmetStyle(save), number: save.number, name: save.team.name },
+    away: { primary: "#3a3a3a", secondary: "#fff", name: "VISITORS" },
+    sky: new Date().getHours() >= 19 || new Date().getHours() < 6 ? "night" : "day",
+  });
+  field.huddle(48);
+  field.state.showLines = false;
+  for (const p of field.state.players) p.anim = "idle";
+  let dir = 1;
+  const pan = setInterval(() => {
+    const s = field.state;
+    if (s.camTarget > 60) dir = -1;
+    if (s.camTarget < 36) dir = 1;
+    s.camTarget += dir * 0.6;
+  }, 120);
+  const cheer = setInterval(() => {
+    for (const p of field.state.players) p.anim = p.team === "home" ? "cheer" : "idle";
+    field.setHype(0.9);
+    setTimeout(() => { for (const p of field.state.players) p.anim = "idle"; }, 1800);
+  }, 7000);
+
+  app.querySelector("#corner").appendChild(muteButton(save, onToggleMute));
   const nameEl = app.querySelector("#kid-name");
-  const jerseyEl = app.querySelector("#jersey");
-  const face = app.querySelector("#jersey-face");
-  const muteBtn = app.querySelector("#mute-btn");
+  const getName = () => (nameEl.value || "Ezekiel").trim().slice(0, 14) || "Ezekiel";
 
-  function clampJersey(n) {
-    n = parseInt(n, 10);
-    if (Number.isNaN(n)) n = 21;
-    return Math.min(99, Math.max(1, n));
-  }
+  app.querySelector("#play-btn").onclick = () => { sfx("whistle"); onPlay({ name: getName() }); };
+  app.querySelector("#locker-btn").onclick = () => { sfx("tap"); onLocker({ name: getName() }); };
+  app.querySelector("#trophy-btn").onclick = () => { sfx("tap"); onTrophies({ name: getName() }); };
+  app.querySelector("#clip-btn").onclick = () => { sfx("tap"); onClipboard({ name: getName() }); };
 
-  function syncJersey(n) {
-    const v = clampJersey(n);
-    jerseyEl.value = v;
-    face.textContent = v;
-    return v;
-  }
-
-  jerseyEl.addEventListener("change", () => syncJersey(jerseyEl.value));
-  app.querySelector("#j-minus").onclick = () => syncJersey(clampJersey(jerseyEl.value) - 1);
-  app.querySelector("#j-plus").onclick = () => syncJersey(clampJersey(jerseyEl.value) + 1);
-
-  muteBtn.onclick = () => {
-    const next = !save.mute;
-    onToggleMute(next);
-    muteBtn.textContent = next ? "🔇" : "🔊";
+  app._cleanup = () => {
+    clearInterval(pan);
+    clearInterval(cheer);
+    field.destroy();
   };
-
-  app.querySelector("#play-btn").onclick = () => {
-    onPlay({
-      name: (nameEl.value || "Ezekiel").trim().slice(0, 16) || "Ezekiel",
-      jersey: clampJersey(jerseyEl.value),
-    });
-  };
-}
-
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
 }
