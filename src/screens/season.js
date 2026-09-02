@@ -3,7 +3,7 @@ import { esc, ICON, mascotBadge, starsHTML, muteButton, el } from "../ui.js";
 import { sfx } from "../audio.js";
 import { coach } from "../speech.js";
 
-export function renderSeason(app, { save, onPlayStage, onBack, onToggleMute }) {
+export function renderSeason(app, { save, onPlayStage, onCamp, onBack, onToggleMute }) {
   const wins = Object.values(save.wins).filter(Boolean).length;
   app.innerHTML = `
     <section class="screen season-screen">
@@ -17,6 +17,11 @@ export function renderSeason(app, { save, onPlayStage, onBack, onToggleMute }) {
         </div>
       </header>
       <div class="season-scroll">
+        <button class="camp-card" id="camp" type="button">
+          <span class="camp-emoji">🏋️</span>
+          <span class="camp-text"><b>Training Camp</b><small>A quick practice drill on the sounds that trick you most. Earn coins, no pressure.</small></span>
+          <span class="btn btn-soft">Practice</span>
+        </button>
         <div class="season-path">
           ${STAGES.map((st, i) => {
             const unlocked = st.id <= save.unlocked;
@@ -41,6 +46,7 @@ export function renderSeason(app, { save, onPlayStage, onBack, onToggleMute }) {
 
   app.querySelector("#mute-slot").appendChild(muteButton(save, onToggleMute));
   app.querySelector("#back").onclick = () => { sfx("tap"); onBack(); };
+  app.querySelector("#camp").onclick = () => { sfx("whistle"); onCamp(); };
 
   app.querySelectorAll(".game-node:not(.locked)").forEach((node) => {
     node.onclick = () => {
@@ -52,7 +58,7 @@ export function renderSeason(app, { save, onPlayStage, onBack, onToggleMute }) {
   // Scroll the next game into view.
   requestAnimationFrame(() => {
     const next = app.querySelector(".game-node.next") || app.querySelector(".game-node.champ");
-    if (next) next.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+    if (next) next.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
   });
 
   function openStage(id) {

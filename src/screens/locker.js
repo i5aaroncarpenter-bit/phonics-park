@@ -1,5 +1,5 @@
 import { HELMETS, TEAM_COLORS, TEAM_NAMES, CELEBRATIONS, teamColors, helmetStyle } from "../save.js";
-import { esc, ICON, helmetSVG, muteButton } from "../ui.js";
+import { esc, ICON, helmetSVG, muteButton, toast } from "../ui.js";
 import { sfx } from "../audio.js";
 import { say } from "../speech.js";
 
@@ -68,7 +68,13 @@ export function renderLocker(app, { save, persist, onBack, onToggleMute }) {
         const h = HELMETS.find((x) => x.id === b.dataset.helmet);
         if (save.owned.helmets.includes(h.id)) { save.team.helmet = h.id; sfx("tap"); }
         else if (save.coins >= h.cost) { save.coins -= h.cost; save.owned.helmets.push(h.id); save.team.helmet = h.id; sfx("coins"); say(`You got the ${h.name} helmet!`); }
-        else { sfx("wrong"); say(`You need ${h.cost - save.coins} more coins. Win games to earn coins!`); return; }
+        else {
+          sfx("wrong");
+          b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+          toast(`Need ${h.cost - save.coins} more coins — win games to earn coins!`, "warn");
+          say(`You need ${h.cost - save.coins} more coins. Win games to earn coins!`);
+          return;
+        }
         persist(); draw();
       };
     });
@@ -77,7 +83,13 @@ export function renderLocker(app, { save, persist, onBack, onToggleMute }) {
         const c = CELEBRATIONS.find((x) => x.id === b.dataset.celeb);
         if (save.owned.celebrations.includes(c.id)) { save.team.celebration = c.id; sfx("tap"); }
         else if (save.coins >= c.cost) { save.coins -= c.cost; save.owned.celebrations.push(c.id); save.team.celebration = c.id; sfx("coins"); say(`${c.name} unlocked!`); }
-        else { sfx("wrong"); say(`You need ${c.cost - save.coins} more coins.`); return; }
+        else {
+          sfx("wrong");
+          b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+          toast(`Need ${c.cost - save.coins} more coins — win games to earn coins!`, "warn");
+          say(`You need ${c.cost - save.coins} more coins.`);
+          return;
+        }
         persist(); draw();
       };
     });

@@ -1,5 +1,5 @@
 import { loadSave, persist as persistSave, awardTrophy } from "./save.js";
-import { STAGES } from "./curriculum.js";
+import { STAGES, buildCampStage } from "./curriculum.js";
 import { setMuted, unlock, startMusic, stopMusic, sfx } from "./audio.js";
 import { initSpeech, setSpeechRate, stopSpeech } from "./speech.js";
 import { renderTitle } from "./screens/title.js";
@@ -63,6 +63,7 @@ function goSeason() {
   renderSeason(app, {
     save,
     onPlayStage(id) { goPlay(id); },
+    onCamp() { goPlay(buildCampStage(save)); },
     onBack: goTitle,
     onToggleMute: muteTo,
   });
@@ -92,7 +93,7 @@ function goPlay(stageId) {
   cleanup();
   stopMusic();
   unlock();
-  const heat = save.wins[stageId] ? 1.12 : 1;
+  const heat = typeof stageId !== "object" && save.wins[stageId] ? 1.12 : 1;
   playMatch(app, {
     save, persist, stageId, heat,
     onQuit: goSeason,
@@ -106,6 +107,19 @@ function finishGame(stats) {
   save.totals.games = (save.totals.games || 0) + 1;
   const newTrophies = [];
   const give = (tid) => { if (awardTrophy(save, tid)) newTrophies.push(tid); };
+
+  if (stats.stage && stats.stage.camp) {
+    if (save.totals.words >= 100) give("century");
+    persist();
+    cleanup();
+    renderResult(app, {
+      save, stats, newTrophies,
+      onAgain() { goPlay(buildCampStage(save)); },
+      onNext: goSeason,
+      onSeason: goSeason,
+    });
+    return;
+  }
 
   if (stats.won) {
     save.wins[id] = true;

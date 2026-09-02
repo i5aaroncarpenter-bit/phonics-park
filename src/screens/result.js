@@ -6,23 +6,23 @@ import { announce, sayWord, coach } from "../speech.js";
 import { createFX } from "../fx.js";
 
 export function renderResult(app, { save, stats, newTrophies = [], onAgain, onNext, onSeason }) {
-  const stage = getStage(stats.stageId);
-  const hasNext = stage.id < STAGES.length;
+  const stage = stats.stage || getStage(stats.stageId);
+  const hasNext = !stage.camp && stage.id < STAGES.length;
   const canNext = stats.won && hasNext && save.unlocked > stage.id;
 
   app.innerHTML = `
     <section class="screen result-screen ${stats.won ? "won" : "lost"}" id="result">
       <div class="result-card">
         <div class="result-head">
-          <h2>${stats.won ? (stage.championship ? "PHONICS BOWL CHAMPION!" : "YOU WIN!") : "GOOD GAME"}</h2>
-          <p>${stats.won ? "The crowd goes wild!" : `The ${esc(stage.opponent.name)} got you this time. Try again — you'll get them!`}</p>
+          <h2>${stage.camp ? "GREAT PRACTICE!" : stats.won ? (stage.championship ? "PHONICS BOWL CHAMPION!" : "YOU WIN!") : "GOOD GAME"}</h2>
+          <p>${stage.camp ? `${stats.correct} of ${stats.plays} right. Every rep makes you a stronger reader!` : stats.won ? "The crowd goes wild!" : `The ${esc(stage.opponent.name)} got you this time. Try again — you'll get them!`}</p>
         </div>
         <div class="final-score">
           <div class="side home"><b>${esc(save.team.name)}</b><span class="big-num">${stats.home}</span></div>
           <div class="vs">FINAL</div>
           <div class="side away"><b>${mascotBadge(stage.opponent, 34)} ${esc(stage.opponent.name)}</b><span class="big-num">${stats.away}</span></div>
         </div>
-        <div class="stars-big" id="stars">${starsHTML(0)}</div>
+        ${stage.camp ? "" : `<div class="stars-big" id="stars">${starsHTML(0)}</div>`}
         <div class="result-stats">
           <div><b>${stats.correct}/${stats.plays}</b><span>plays right</span></div>
           <div><b>${stats.touchdowns}</b><span>touchdowns</span></div>
@@ -45,7 +45,10 @@ export function renderResult(app, { save, stats, newTrophies = [], onAgain, onNe
   const fx = createFX(root);
   startMusic(stats.won ? "victory" : "menu");
 
-  if (stats.won) {
+  if (stage.camp) {
+    sfx("cheer", { big: true });
+    coach(`Great practice, ${save.name}! ${stats.correct} out of ${stats.plays}. Keep it up!`);
+  } else if (stats.won) {
     sfx("win");
     fx.rain(3000);
     announce(stage.championship ? `${save.name} is the Phonics Bowl champion!` : `${save.name} wins!`);
@@ -58,7 +61,7 @@ export function renderResult(app, { save, stats, newTrophies = [], onAgain, onNe
   const starEl = app.querySelector("#stars");
   let shown = 0;
   const popStar = () => {
-    if (shown >= stats.stars) return;
+    if (!starEl || shown >= stats.stars) return;
     shown += 1;
     starEl.innerHTML = starsHTML(shown);
     starEl.querySelectorAll("i.on")[shown - 1]?.classList.add("pop");
@@ -75,7 +78,7 @@ export function renderResult(app, { save, stats, newTrophies = [], onAgain, onNe
     b.onclick = () => {
       const item = ALL_WORDS.find((x) => x.word.toLowerCase() === b.dataset.w.toLowerCase());
       b.classList.add("glow");
-      setTimeout(() => b.classList.remove("glow"), 600);
+      setTimeout(() => b.classList.remove("glow"), 1200);
       sayWord(item || b.dataset.w, { slow: true });
     };
   });

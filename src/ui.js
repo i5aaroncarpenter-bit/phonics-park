@@ -92,6 +92,19 @@ export function keywordHint(g, KEYWORDS) {
   return k ? `<small class="kw">${k[1]}</small>` : "";
 }
 
+/** Brief on-screen message (used for shop feedback etc.). */
+export function toast(text, kind = "") {
+  const app = document.getElementById("app");
+  if (!app) return;
+  app.querySelectorAll(".toast").forEach((n) => n.remove());
+  const el = document.createElement("div");
+  el.className = "toast " + kind;
+  el.textContent = text;
+  app.appendChild(el);
+  setTimeout(() => el.classList.add("out"), 1900);
+  setTimeout(() => el.remove(), 2300);
+}
+
 export function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }

@@ -16,7 +16,7 @@
  *  12  The Phonics Bowl    championship mix of everything
  */
 
-import { masteryScore } from "./save.js";
+import { masteryScore, weakKeys } from "./save.js";
 
 /** Keyword pictures for every sound tile: [word, emoji]. */
 export const KEYWORDS = {
@@ -353,6 +353,36 @@ export const STAGES = [
     plays: ["pass", "rush", "kick", "defense", "readzone", "rush-read"], count: 14, baseMs: 8000, decoys: 4,
   },
 ];
+
+/**
+ * Training Camp — a short practice game built from the sounds and words the
+ * child has missed most, drawn from every game they have unlocked.
+ */
+export function buildCampStage(save) {
+  const unlocked = STAGES.filter((st) => st.id <= Math.max(1, save.unlocked));
+  const weak = weakKeys(save, 14).map((k) => k.key);
+  const wordStages = unlocked.filter((st) => st.focus !== "letters" && st.focus !== "sight");
+  const base = {
+    id: "camp", title: "Training Camp", camp: true, sky: "day",
+    blurb: "Practice the sounds that trick you most.",
+    coach: "Training camp! Let's work on the sounds that trick you. No pressure — just practice.",
+    opponent: OPP("Practice Squad", "🏋️", "#6c757d", "#ffffff"),
+    count: 8, baseMs: 9500, decoys: 3,
+  };
+  if (!wordStages.length) {
+    const letters = [...new Set(unlocked.flatMap((st) => st.letters || []))];
+    const focusLetters = letters.filter((l) => weak.includes(l));
+    return { ...base, focus: "letters", letters: focusLetters.length >= 3 ? focusLetters : letters, review: letters, words: CVC_ALL, plays: ["soundid", "initial", "defense-letter"] };
+  }
+  const pool = uniqueByWord(wordStages.flatMap((st) => st.words));
+  const hits = pool.filter((x) => keysFor(x).some((k) => weak.includes(k)));
+  const words = hits.length >= 8 ? hits : uniqueByWord([...hits, ...weightedSample(pool.filter((x) => !hits.includes(x)), 8 - hits.length + 4, save)]);
+  const targets = [...new Set(wordStages.flatMap((st) => st.targets || []))].filter((tg) => words.some((x) => (tg.includes("_") ? magicKey(x) === tg : x.g.map((g) => g.toLowerCase()).includes(tg))));
+  return {
+    ...base, focus: "mix", words, targets, review: pool,
+    plays: ["pass", "rush", "kick", "rush-read", ...(targets.length ? ["defense"] : [])],
+  };
+}
 
 export const ALL_WORDS = [...CVC_ALL, ...DIGRAPHS, ...BLENDS, ...END_BLENDS, ...MAGIC_E, ...VOWEL_TEAMS, ...BOSSY_R];
 

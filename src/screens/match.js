@@ -22,7 +22,7 @@ const START_YARD = 25;
 const OPP_GAIN = 34;
 
 export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQuit, onToggleMute }) {
-  const stage = getStage(stageId);
+  const stage = typeof stageId === "object" ? stageId : getStage(stageId);
   const colors = teamColors(save);
   const plan = buildGamePlan(stage, save, heat);
   const queue = [...plan];
@@ -43,7 +43,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
           <span class="pts" id="home-pts">0</span>
         </div>
         <div class="hud-mid">
-          <div class="qtr" id="qtr">${stage.championship ? "BOWL" : "Q1"}</div>
+          <div class="qtr" id="qtr">${stage.championship ? "BOWL" : stage.camp ? "CAMP" : "Q1"}</div>
           <div class="play-count" id="playcount">Play 1 of ${total}</div>
         </div>
         <div class="score away">
@@ -105,7 +105,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
     app.querySelector("#home-pts").textContent = G.home;
     app.querySelector("#away-pts").textContent = G.away;
     app.querySelector("#playcount").textContent = G.overtime ? "OVERTIME" : `Play ${Math.min(G.playNo + 1, G.total)} of ${G.total}`;
-    if (!stage.championship) app.querySelector("#qtr").textContent = G.overtime ? "OT" : `Q${Math.min(4, Math.floor((G.playNo / G.total) * 4) + 1)}`;
+    if (!stage.championship && !stage.camp) app.querySelector("#qtr").textContent = G.overtime ? "OT" : `Q${Math.min(4, Math.floor((G.playNo / G.total) * 4) + 1)}`;
     app.querySelector("#drive-fill").style.width = `${Math.min(100, G.oppMeter)}%`;
     app.querySelector("#drive-mascot").style.left = `${Math.min(100, G.oppMeter)}%`;
     app.querySelector("#yard-chip").textContent = G.yard >= 85 ? `RED ZONE! ${100 - G.yard} yards to go` : `${100 - G.yard} yards to touchdown`;
@@ -281,7 +281,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
     sfx("whistle", { long: true });
     crowd(0.5);
     startMusic("game");
-    const firstTime = !save.tutorials["stage:" + stage.id];
+    const firstTime = !save.tutorials["stage:" + stage.id] || stage.camp;
     if (firstTime) {
       save.tutorials["stage:" + stage.id] = true;
       persist();
@@ -330,7 +330,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
     const acc = G.plays ? G.correct / G.plays : 0;
     const stars = won ? (acc >= 0.92 ? 3 : acc >= 0.75 ? 2 : 1) : 0;
     const stats = {
-      stageId: stage.id, won, stars, acc, home: G.home, away: G.away, plays: G.plays, correct: G.correct,
+      stageId: stage.id, stage, won, stars, acc, home: G.home, away: G.away, plays: G.plays, correct: G.correct,
       touchdowns: G.touchdowns, fieldGoals: G.fieldGoals, bigPlays: G.bigPlays, bestStreak: G.bestStreak,
       yards: G.yards, coins: G.coins, words: G.words, missed: [...new Set(G.missed)],
       perfect: G.plays > 0 && G.correct === G.plays, ms: Date.now() - G.startMs,
