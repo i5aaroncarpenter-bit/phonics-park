@@ -277,6 +277,7 @@ export function trace(D, L, save) {
       for (const p of D.field.state.players) if (p.team === "home") p.anim = "cheer";
       await letterName(L.l);
       await praise();
+      await wait(900);
       for (const p of D.field.state.players) p.anim = "idle";
       cancelAnimationFrame(raf);
       resolve({ correct: true, tries: 1 });

@@ -2,6 +2,15 @@
 
 **Read it. Run it. Score!** A web-based football game that teaches reading and phonics to early readers (ages 5–8). No install, no accounts, no binary assets — one static page.
 
+## Two leagues, many players
+
+On first launch you create a **player profile** (several children can share a device; switch from the title screen). Each player picks a **buddy mascot** and an age band:
+
+- **Little League (ages 3–5)** — eight games that walk through the alphabet: Letter Parade (name, sound, keyword), Find the Letter, **Trace the Letter** (finger tracing with stroke guides), Starting Lineup (beginning sounds with pictures), Rhyme Time, Clap It Out (syllables) and a musical Alphabet Kickoff. No clocks, unlimited gentle retries, everything spoken.
+- **Big League (ages 6+)** — the 12-game phonics season and Training Camp described below.
+
+Everyone earns **mystery boxes** with collectible word **stickers** (a sticker book you can tap to hear each word), **daily gifts** with streak bonuses, and **XP ranks** from Rookie to Legend.
+
 ## Play
 
 ```
