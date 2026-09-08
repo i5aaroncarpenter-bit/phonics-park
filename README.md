@@ -29,7 +29,20 @@ Twelve games, each against a new team, each teaching one phonics skill in order:
 | 11 Bossy R Rumble | ar or er ir ur | Cyber Cats |
 | 12 The Phonics Bowl | championship — everything mixed | Golden Gorillas |
 
-Win a game (outscore the opponent) to unlock the next one. Stars are earned for accuracy. **Training Camp** (on the season screen) is a short no-pressure drill built from the sounds and words the child has missed most.
+Win a game (outscore the opponent) to unlock the next one. Stars are earned for accuracy.
+
+## Training Camp
+
+Six no-pressure drills on the building blocks of reading, each with its own best score, stars and coins:
+
+| Drill | Teaches | How it plays |
+| --- | --- | --- |
+| Vowel Kicks | short vowel sounds, then long vowels | hear the vowel (or see a word with its vowel missing) and kick through the matching upright; streaks push the kick back |
+| Sound Twins | sound ↔ picture and alternate spellings (ai/ay, ee/ea, c/k…) | helmet memory match; flipping a helmet plays its sound |
+| Word Family Huddle | onset + rime blending, real vs. nonsense words | the rime stays (-at); tap a first sound that makes a real word to run it in |
+| Sound Catch | finding a target sound inside printed words | 60 seconds of punted words flying across the stadium; catch the ones with the sound |
+| Blend Blitz | fluent blending | 90-second no-huddle pass plays with a combo multiplier |
+| Coach's Drill | the child's weakest sounds | a short game built from mastery data |
 
 ## The plays
 
@@ -49,4 +62,8 @@ Add `?debug` to the URL to expose the current play spec on `window.__pbSpec` for
 
 ## Tech
 
-Vanilla ES modules, Canvas 2D for the stadium, Web Audio for all sound effects and music, Web Speech API for the voice (with a synth fallback). Node ≥ 18 for the tiny static server.
+Vanilla ES modules, Canvas 2D for the stadium, Web Audio for all sound effects and music, Web Speech API for whole words, sentences and the coach (with a synth fallback).
+
+**Letter sounds are recorded phoneme clips** (`assets/sounds/*.mp3`, 68 clips: consonants, short and long vowels, digraphs, r-controlled vowels, beginning and ending blends) so tiles always say the sound and never the letter name, regardless of the browser's voice. They are generated from phoneme strings with espeak-ng + the MBROLA us1 diphone voice by `tools/build-sounds.mjs` (`sudo apt-get install espeak-ng mbrola mbrola-us1 ffmpeg`, then `node tools/build-sounds.mjs`).
+
+Node ≥ 18 for the tiny static server.
