@@ -17,6 +17,7 @@ const MIME = {
   ".png": "image/png",
   ".ico": "image/x-icon",
   ".woff2": "font/woff2",
+  ".mp3": "audio/mpeg",
   ".txt": "text/plain; charset=utf-8",
   ".md": "text/plain; charset=utf-8",
 };
@@ -48,5 +49,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Phonics Park listening on http://0.0.0.0:${PORT}`);
+  console.log(`Phonics Bowl listening on http://0.0.0.0:${PORT}`);
 });
