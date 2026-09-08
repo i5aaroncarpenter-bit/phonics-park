@@ -1,12 +1,13 @@
 {
-  "name": "phonics-park",
+  "name": "mighty-men",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Phonics Park — Sound it out. Swing for the fences. A baseball phonics game for early readers.",
+  "description": "Mighty Men — Warriors of the Word. A Bible verse memory game: memorize verses, earn shekels, forge your armor, and fight the giants of Gath.",
   "scripts": {
-    "build": "node -e \"console.log('Phonics Park: static build, nothing to compile.')\"",
-    "start": "node server.mjs"
+    "build": "node -e \"console.log('Mighty Men: static build, nothing to compile.')\"",
+    "start": "node server.mjs",
+    "check": "node --input-type=module -e \"import('./src/data/verses.js').then(m => console.log(m.VERSES.length + ' verses OK'))\""
   },
   "engines": {
     "node": ">=18"

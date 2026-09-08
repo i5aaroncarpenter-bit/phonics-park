@@ -48,5 +48,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Phonics Park listening on http://0.0.0.0:${PORT}`);
+  console.log(`Mighty Men listening on http://0.0.0.0:${PORT}`);
 });

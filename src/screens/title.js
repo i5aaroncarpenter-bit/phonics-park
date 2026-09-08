@@ -1,73 +1,92 @@
-export function renderTitle(app, { save, onPlay, onToggleMute }) {
-  app.innerHTML = `
-    <section class="screen park-bg title-screen">
-      <div class="bunting">${"<i></i>".repeat(13)}</div>
-      <div class="logo-lockup">
-        <h1>Phonics Park</h1>
-        <p class="tagline">Sound it out. Swing for the fences.</p>
-      </div>
-      <div class="player-card">
-        <div class="jersey" aria-hidden="true">
-          <div class="jersey-head"></div>
-          <div class="jersey-body"><div class="jersey-num" id="jersey-face">${save.jersey}</div></div>
-        </div>
-        <div class="player-fields">
-          <label for="kid-name">Player</label>
-          <input id="kid-name" type="text" maxlength="16" value="${esc(save.name)}" autocomplete="off" />
-          <label>Jersey</label>
-          <div class="jersey-row">
-            <button class="btn icon-btn" id="j-minus" type="button" aria-label="Lower number">−</button>
-            <input id="jersey" type="number" min="1" max="99" value="${save.jersey}" />
-            <button class="btn icon-btn" id="j-plus" type="button" aria-label="Raise number">+</button>
-          </div>
-        </div>
-      </div>
-      <div class="title-actions">
-        <button class="btn icon-btn" id="mute-btn" type="button" aria-label="Mute">${save.mute ? "🔇" : "🔊"}</button>
-        <button class="btn btn-go" id="play-btn" type="button">Play Ball!</button>
-      </div>
-      <p class="credits">Made for Ezekiel</p>
-    </section>
-  `;
+/** Title screen: the Roll of the Mighty (choose a warrior) and warrior creation. */
 
-  const nameEl = app.querySelector("#kid-name");
-  const jerseyEl = app.querySelector("#jersey");
-  const face = app.querySelector("#jersey-face");
-  const muteBtn = app.querySelector("#mute-btn");
+import { el, button, fmt, modal, toast } from "../ui.js";
+import { heroSVG } from "../hero.js";
+import { newProfile, LOOKS } from "../save.js";
+import { rankFor } from "../data/progress.js";
+import { valor } from "../engine/progress.js";
+import { sfx } from "../audio.js";
 
-  function clampJersey(n) {
-    n = parseInt(n, 10);
-    if (Number.isNaN(n)) n = 21;
-    return Math.min(99, Math.max(1, n));
-  }
+export function renderTitle(app, ctx) {
+  const { save } = ctx;
+  const wrap = el("div", { class: "screen title" });
+  const logo = el("div", { class: "logo" }, el("div", { class: "logo-top", text: "David's" }), el("h1", { class: "logo-main", text: "MIGHTY MEN" }), el("div", { class: "logo-sub", text: "Warriors of the Word" }));
+  const verse = el("p", { class: "title-verse", text: "\"Be strong and courageous.\" — Joshua 1:9" });
+  wrap.append(logo, verse);
 
-  function syncJersey(n) {
-    const v = clampJersey(n);
-    jerseyEl.value = v;
-    face.textContent = v;
-    return v;
-  }
+  const roll = el("div", { class: "roll" });
+  wrap.append(el("h2", { class: "roll-title", text: save.profiles.length ? "The Roll of the Mighty" : "Who will answer the call?" }));
+  const sorted = save.profiles.slice().sort((a, b) => valor(b) - valor(a) || b.xp - a.xp);
+  sorted.forEach((p, i) => {
+    const rank = rankFor(p.xp);
+    const card = el(
+      "button",
+      { class: "roll-card", type: "button", onClick: () => { sfx("drum"); ctx.onChoose(p); } },
+      el("div", { class: "roll-pos", text: i === 0 && sorted.length > 1 ? "👑" : `#${i + 1}` }),
+      heroSVG(p, { size: 120 }),
+      el("div", { class: "roll-info" }, el("b", { class: "roll-name", text: p.name }), el("div", { class: "roll-rank", text: `${rank.icon} ${rank.name}` }), el("div", { class: "roll-stats", text: `⚔️ ${valor(p)} verses · 🪙 ${fmt(p.shekels)}` })),
+    );
+    roll.append(card);
+  });
+  wrap.append(roll);
 
-  jerseyEl.addEventListener("change", () => syncJersey(jerseyEl.value));
-  app.querySelector("#j-minus").onclick = () => syncJersey(clampJersey(jerseyEl.value) - 1);
-  app.querySelector("#j-plus").onclick = () => syncJersey(clampJersey(jerseyEl.value) + 1);
+  const actions = el("div", { class: "title-actions" });
+  actions.append(button("＋ New Warrior", () => createFlow(), "btn btn-gold btn-big"));
+  actions.append(button("⛺ Captain's Tent", () => ctx.onTent(), "btn"));
+  wrap.append(actions);
+  wrap.append(el("p", { class: "title-foot", text: "Memorize God's word · Earn shekels · Forge your armor · Fight the giants" }));
+  app.replaceChildren(wrap);
 
-  muteBtn.onclick = () => {
-    const next = !save.mute;
-    onToggleMute(next);
-    muteBtn.textContent = next ? "🔇" : "🔊";
-  };
+  function createFlow() {
+    sfx("page");
+    const draft = newProfile("", {});
+    const preview = el("div", { class: "create-preview" });
+    const nameInput = el("input", { class: "input name-input", type: "text", maxlength: "16", placeholder: "Warrior's name", autocomplete: "off" });
+    const redraw = () => preview.replaceChildren(heroSVG(draft, { size: 220 }));
+    redraw();
 
-  app.querySelector("#play-btn").onclick = () => {
-    onPlay({
-      name: (nameEl.value || "Ezekiel").trim().slice(0, 16) || "Ezekiel",
-      jersey: clampJersey(jerseyEl.value),
+    const swatchRow = (label, key, values, isStyle = false) => {
+      const row = el("div", { class: "swatch-row" }, el("span", { class: "swatch-label", text: label }));
+      const group = el("div", { class: "swatches" });
+      for (const v of values) {
+        const s = el("button", { class: `swatch ${draft.look[key] === v ? "on" : ""}`, type: "button", title: v, style: isStyle ? {} : { background: v }, text: isStyle ? v : "" });
+        s.addEventListener("click", () => {
+          draft.look[key] = v;
+          group.querySelectorAll(".swatch").forEach((x) => x.classList.remove("on"));
+          s.classList.add("on");
+          sfx("tap");
+          redraw();
+        });
+        group.append(s);
+      }
+      row.append(group);
+      return row;
+    };
+
+    const form = el(
+      "div",
+      { class: "create-form" },
+      preview,
+      nameInput,
+      swatchRow("Skin", "skin", LOOKS.skin),
+      swatchRow("Hair", "hair", LOOKS.hair),
+      swatchRow("Style", "hairStyle", LOOKS.hairStyle, true),
+      swatchRow("Tunic", "tunic", LOOKS.tunic),
+    );
+    modal({ title: "Join the Mighty Men", body: form, buttons: [{ id: "cancel", label: "Back", cls: "btn" }, { id: "ok", label: "Answer the call!", cls: "btn btn-gold" }], cls: "modal-wide" }).then((r) => {
+      if (r !== "ok") return;
+      const name = nameInput.value.trim();
+      if (!name) {
+        toast("Every warrior needs a name.", "bad");
+        return createFlow();
+      }
+      draft.name = name;
+      save.profiles.push(draft);
+      save.active = draft.id;
+      ctx.persist();
+      sfx("fanfare");
+      ctx.onChoose(draft);
     });
-  };
-}
-
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
+    setTimeout(() => nameInput.focus(), 100);
+  }
 }
