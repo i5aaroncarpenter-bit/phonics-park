@@ -4,11 +4,17 @@ A Bible verse memory game for children, built around David and his mighty men
 (1 Samuel 17, 30; 2 Samuel 21, 23; 1 Chronicles 11, 20). Memorize God's word,
 earn shekels, forge your armor, and fight the giants of Gath.
 
+**Play it now: [davidsmightymen.surge.sh](https://davidsmightymen.surge.sh)**
+
 No build step. Plain HTML/CSS/JS modules served by `server.mjs`.
 
 ```
 npm start          # http://localhost:8080
+npm run deploy     # publishes to https://davidsmightymen.surge.sh (needs the Surge login)
 ```
+
+Any static host works too (the Railway config is included). Sound and read-aloud
+start after the first tap on the page (browser autoplay rules).
 
 ## How it plays
 
@@ -74,6 +80,7 @@ specials: Pounce, Roar, Crush, Rally, Spear Throw.
 ```
 index.html            entry
 server.mjs            static server (Railway: node server.mjs)
+tools/deploy-surge.sh publish to surge.sh
 src/main.js           router
 src/data/verses.js    scrolls and verses (WEB + KJV), text helpers
 src/data/gear.js      armory catalog and hero stats
