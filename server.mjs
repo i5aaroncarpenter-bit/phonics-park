@@ -17,6 +17,7 @@ const MIME = {
   ".png": "image/png",
   ".ico": "image/x-icon",
   ".woff2": "font/woff2",
+  ".mp3": "audio/mpeg",
   ".txt": "text/plain; charset=utf-8",
   ".md": "text/plain; charset=utf-8",
 };

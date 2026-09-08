@@ -41,6 +41,16 @@ function ensure() {
   return ctx;
 }
 
+/** Shared AudioContext (also used by the phoneme clip player). */
+export function audioContext() {
+  return ensure();
+}
+
+export function sfxDestination() {
+  ensure();
+  return sfxBus;
+}
+
 export async function unlock() {
   const c = ensure();
   if (!c) return;

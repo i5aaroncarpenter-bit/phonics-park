@@ -1,7 +1,7 @@
 import { loadSave, persist as persistSave, awardTrophy } from "./save.js";
 import { STAGES, buildCampStage } from "./curriculum.js";
 import { setMuted, unlock, startMusic, stopMusic, sfx } from "./audio.js";
-import { initSpeech, setSpeechRate, setSoundStyle, stopSpeech } from "./speech.js";
+import { initSpeech, setSpeechRate, setSoundStyle, stopSpeech, preloadSounds } from "./speech.js";
 import { renderTitle } from "./screens/title.js";
 import { renderSeason } from "./screens/season.js";
 import { renderLocker } from "./screens/locker.js";
@@ -155,6 +155,6 @@ function finishGame(stats) {
   });
 }
 
-window.addEventListener("pointerdown", () => { unlock(); if (!save.mute && !app.querySelector(".match")) startMusic("menu"); }, { once: true });
+window.addEventListener("pointerdown", () => { unlock(); preloadSounds(); if (!save.mute && !app.querySelector(".match")) startMusic("menu"); }, { once: true });
 window.addEventListener("keydown", (e) => { if (e.key === "Escape") sfx("tap"); });
 goTitle();

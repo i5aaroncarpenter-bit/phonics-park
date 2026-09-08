@@ -56,12 +56,12 @@ export function renderClipboard(app, { save, persist, onBack, onReset, onToggleM
             </label>
             <label class="field"><span>Letter sounds</span>
               <select id="sound-style">
-                <option value="pure" ${(save.soundStyle || "pure") === "pure" ? "selected" : ""}>Pure sounds (mmm, sss, ah)</option>
-                <option value="easy" ${save.soundStyle === "easy" ? "selected" : ""}>Easy sounds (muh, suh, "a as in apple")</option>
+                <option value="pure" ${(save.soundStyle || "pure") === "pure" ? "selected" : ""}>Recorded sounds (recommended)</option>
+                <option value="easy" ${save.soundStyle === "easy" ? "selected" : ""}>Voice with keywords ("a, as in apple")</option>
               </select>
             </label>
             <button class="btn" id="test-voice" type="button">${ICON.ear} Test voice</button>
-            <p class="muted">Tip: on Chrome, "Google US English" sounds the most natural. On iPad, "Samantha" works well. If letter sounds come out as letter names or get spelled out, switch to Easy sounds.</p>`
+            <p class="muted">Tip: on Chrome, "Google US English" sounds the most natural. On iPad, "Samantha" works well. Letter sounds are recorded phoneme clips, so they are correct in every browser; the voice setting affects whole words, sentences and the coach.</p>`
             : `<p class="muted">This browser has no speech voices. Words are approximated with a built-in synth — Chrome, Safari or Edge will sound much better.</p>`}
         </div>
         <div class="clip-card">

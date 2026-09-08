@@ -8,6 +8,8 @@
  * formant synthesizer so the game is still playable.
  */
 
+import { CLIP_NAMES, playClip, preloadClips } from "./clips.js";
+
 let muted = false;
 let rate = 0.92;
 let voice = null;
@@ -50,6 +52,29 @@ const EASY = {
   mp: "muh puh", nd: "nuh duh", nt: "nuh tuh", sk: "suh kuh", lk: "luh kuh", ft: "fuh tuh", lt: "luh tuh",
 };
 let soundStyle = "pure";
+
+/** Sound unit → recorded clip name (see assets/sounds). */
+const CLIP_FOR = {
+  c: "k", ck: "k", k: "k", ll: "l", ss: "s", ff: "f", dd: "d", mm: "m", tt: "t", nn: "n", wh: "w",
+  "long-a": "ay", ai: "ay", ay: "ay", a_e: "ay",
+  "long-e": "ee", ee: "ee", ea: "ee", e_e: "ee",
+  "long-i": "eye", ie: "eye", igh: "eye", i_e: "eye",
+  "long-o": "oh", oa: "oh", ow: "oh", o_e: "oh",
+  "long-u": "yoo", u_e: "yoo", ue: "oo", oo: "oo",
+  ir: "er", ur: "er", oi: "oy", ou: "ow",
+};
+const VOICED_TH = new Set(["the", "this", "that", "them", "then", "they", "there", "these", "those", "than", "with"]);
+
+function clipFor(unit, item) {
+  if (unit === "silent") return null;
+  let name = CLIP_FOR[unit] || unit;
+  if (name === "th" && item && VOICED_TH.has(String(item.word).toLowerCase())) name = "th2";
+  return CLIP_NAMES.has(name) ? name : null;
+}
+
+export function preloadSounds() {
+  preloadClips();
+}
 
 export function setSoundStyle(style) {
   soundStyle = style === "easy" ? "easy" : "pure";
@@ -218,13 +243,36 @@ export function sayWord(item, opts = {}) {
   return say(word, { rate: opts.slow ? 0.78 : 0.95, pitch: 1.05, interrupt: opts.interrupt });
 }
 
-/** Speak a single sound tile. */
-export function saySound(g, item) {
+/** Speak a single sound tile: recorded phoneme clip first, voice fallback. */
+export async function saySound(g, item) {
+  if (muted) return;
   const key = String(g || "").toLowerCase();
-  const text = respell(key, item);
-  if (!text) return Promise.resolve();
-  if (!speechAvailable()) return fallbackSound(key);
+  const unit = unitFor(key, item);
+  const clip = soundStyle === "pure" ? clipFor(unit, item) : null;
+  if (clip) {
+    stopSpeech();
+    try {
+      await playClip(clip);
+      return;
+    } catch { /* fall through to the voice */ }
+  }
+  const text = soundStyle === "easy" && KEYWORD_TEXT[unit] ? KEYWORD_TEXT[unit] : respell(key, item);
+  if (!text) return;
+  if (!speechAvailable()) return fallbackSound(unit);
   return say(text, { rate: 0.9, pitch: 1.05 });
+}
+
+/** "a as in apple" style prompts for the easy sound style. */
+const KEYWORD_TEXT = {
+  a: "a, as in apple", e: "e, as in egg", i: "i, as in igloo", o: "o, as in octopus", u: "u, as in up",
+};
+
+function unitFor(key, item) {
+  if (item && item.g) {
+    const idx = item.g.map((x) => x.toLowerCase()).indexOf(key);
+    if (idx >= 0) return graphemeUnits(item)[idx];
+  }
+  return key;
 }
 
 /**
@@ -235,12 +283,23 @@ export async function stretchWord(item) {
   if (muted) return;
   const g = item.g || [item.word];
   const units = graphemeUnits(item);
+  stopSpeech();
+  const allClips = soundStyle === "pure" && units.every((u) => u === "silent" || clipFor(u, item));
+  if (allClips) {
+    for (const u of units) {
+      if (u === "silent") continue;
+      try { await playClip(clipFor(u, item)); } catch { break; }
+      await new Promise((r) => setTimeout(r, 90));
+    }
+    await new Promise((r) => setTimeout(r, 120));
+    await sayWord(item, { slow: true, interrupt: false });
+    return;
+  }
   if (!speechAvailable()) {
     for (const u of units) await fallbackSound(u);
     await fallbackWord(item.word, item);
     return;
   }
-  stopSpeech();
   const seq = [];
   for (let i = 0; i < g.length; i++) {
     const t = soundText(units[i]);
