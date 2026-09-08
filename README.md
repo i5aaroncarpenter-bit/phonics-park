@@ -1,6 +1,8 @@
 # Phonics Bowl
 
-**Read it. Run it. Score!** A web-based football game that teaches reading and phonics to early readers (ages 5–8). No install, no accounts, no binary assets — one static page.
+**Read it. Run it. Score!** A web-based football game that teaches reading and phonics to early readers (ages 3–8). No install, no accounts — one static page.
+
+**Play it now: [phonicsbowl.surge.sh](https://phonicsbowl.surge.sh)**
 
 ## Two leagues, many players
 
@@ -15,9 +17,10 @@ Everyone earns **mystery boxes** with collectible word **stickers** (a sticker b
 
 ```
 npm start          # serves on http://localhost:8080
+npm run deploy     # publishes to https://phonicsbowl.surge.sh (needs the Surge login)
 ```
 
-Any static host works too (Railway config is included). Sound requires one tap on the page first (browser autoplay rules).
+Any static host works too (Railway config and a GitHub Pages workflow are included). Sound requires one tap on the page first (browser autoplay rules).
 
 ## The season
 

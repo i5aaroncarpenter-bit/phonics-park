@@ -3,13 +3,15 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Phonics Bowl — Read it. Run it. Score! A football phonics game for early readers.",
+  "description": "Phonics Bowl \u2014 Read it. Run it. Score! A football phonics game for early readers.",
   "scripts": {
     "build": "node -e \"console.log('Phonics Bowl: static build, nothing to compile.')\"",
     "start": "node server.mjs",
-    "check": "for f in $(find src -name '*.js'); do node --check $f || exit 1; done && echo syntax ok"
+    "check": "for f in $(find src -name '*.js'); do node --check $f || exit 1; done && echo syntax ok",
+    "deploy": "bash tools/deploy-surge.sh"
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "homepage": "https://phonicsbowl.surge.sh"
 }
