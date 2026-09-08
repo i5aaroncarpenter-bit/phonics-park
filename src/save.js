@@ -4,6 +4,29 @@
  */
 
 const KEY = "phonics-bowl-v1";
+const PROFILES_KEY = "phonics-bowl-profiles";
+
+/** Buddy mascots a child picks when their profile is created. */
+export const BUDDIES = [
+  { id: "pup", emoji: "🐶", name: "Blitz the Pup" }, { id: "cat", emoji: "🐱", name: "Whiskers" },
+  { id: "frog", emoji: "🐸", name: "Hopper" }, { id: "dino", emoji: "🦖", name: "Rexy" },
+  { id: "unicorn", emoji: "🦄", name: "Sparkle" }, { id: "panda", emoji: "🐼", name: "Bamboo" },
+  { id: "penguin", emoji: "🐧", name: "Waddles" }, { id: "fox", emoji: "🦊", name: "Zoom" },
+  { id: "monkey", emoji: "🐵", name: "Bananas" }, { id: "robot", emoji: "🤖", name: "Beep" },
+];
+
+export const RANKS = [
+  { xp: 0, name: "Rookie", emoji: "🌱" }, { xp: 150, name: "Starter", emoji: "⭐" }, { xp: 450, name: "Star Player", emoji: "🌟" },
+  { xp: 900, name: "All-Pro", emoji: "🏅" }, { xp: 1600, name: "MVP", emoji: "🏆" }, { xp: 2600, name: "Hall of Famer", emoji: "👑" },
+  { xp: 4000, name: "Legend", emoji: "🐐" },
+];
+
+export function rankFor(xp) {
+  let r = RANKS[0];
+  for (const x of RANKS) if (xp >= x.xp) r = x;
+  const next = RANKS[RANKS.indexOf(r) + 1] || null;
+  return { ...r, next, progress: next ? (xp - r.xp) / (next.xp - r.xp) : 1 };
+}
 
 export const HELMETS = [
   { id: "classic", name: "Classic", cost: 0, style: "solid" },
@@ -57,13 +80,89 @@ const DEFAULT = {
   mastery: {},
   tutorials: {},
   camp: {},
+  mode: "pro",
+  buddy: "pup",
+  xp: 0,
+  stickers: [],
+  daily: { last: "", streak: 0, claimed: "" },
+  rookie: { unlocked: 1, stars: {}, letters: {} },
   totals: { plays: 0, correct: 0, touchdowns: 0, yards: 0, games: 0, words: 0, streak: 0 },
   lastPlayed: 0,
 };
 
+/* ---------- profiles (several children on one device) ---------- */
+
+function readProfiles() {
+  try {
+    const raw = localStorage.getItem(PROFILES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return { active: "", list: [] };
+}
+
+function writeProfiles(p) {
+  try { localStorage.setItem(PROFILES_KEY, JSON.stringify(p)); } catch { /* ignore */ }
+}
+
+function keyFor(id) {
+  return id ? `${KEY}:${id}` : KEY;
+}
+
+export function listProfiles() {
+  const p = readProfiles();
+  return p.list.map((x) => ({ ...x, active: x.id === p.active }));
+}
+
+export function activeProfileId() {
+  return readProfiles().active || "";
+}
+
+export function setActiveProfile(id) {
+  const p = readProfiles();
+  p.active = id;
+  writeProfiles(p);
+}
+
+export function createProfile({ name, mode = "pro", buddy = "pup" }) {
+  const p = readProfiles();
+  const id = "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  p.list.push({ id, name, mode, buddy });
+  p.active = id;
+  writeProfiles(p);
+  const s = structuredClone(DEFAULT);
+  s.name = name;
+  s.mode = mode;
+  s.buddy = buddy;
+  persist(s);
+  return s;
+}
+
+export function updateProfileMeta(save) {
+  const p = readProfiles();
+  const rec = p.list.find((x) => x.id === p.active);
+  if (rec) { rec.name = save.name; rec.mode = save.mode; rec.buddy = save.buddy; writeProfiles(p); }
+}
+
+export function deleteProfile(id) {
+  const p = readProfiles();
+  p.list = p.list.filter((x) => x.id !== id);
+  if (p.active === id) p.active = p.list[0] ? p.list[0].id : "";
+  writeProfiles(p);
+  try { localStorage.removeItem(keyFor(id)); } catch { /* ignore */ }
+}
+
 export function loadSave() {
   try {
-    const raw = localStorage.getItem(KEY);
+    const profiles = readProfiles();
+    // First run with an existing single-player save: adopt it as the first profile.
+    if (!profiles.list.length && localStorage.getItem(KEY)) {
+      const legacy = JSON.parse(localStorage.getItem(KEY));
+      const id = "p-legacy";
+      writeProfiles({ active: id, list: [{ id, name: legacy.name || "Player", mode: legacy.mode || "pro", buddy: legacy.buddy || "pup" }] });
+      localStorage.setItem(keyFor(id), localStorage.getItem(KEY));
+      localStorage.removeItem(KEY);
+    }
+    const raw = localStorage.getItem(keyFor(readProfiles().active));
     if (!raw) return structuredClone(DEFAULT);
     const parsed = JSON.parse(raw);
     const s = structuredClone(DEFAULT);
@@ -80,6 +179,11 @@ export function loadSave() {
     s.mastery = { ...(parsed.mastery || {}) };
     s.tutorials = { ...(parsed.tutorials || {}) };
     s.camp = { ...(parsed.camp || {}) };
+    s.daily = { ...DEFAULT.daily, ...(parsed.daily || {}) };
+    s.rookie = { ...structuredClone(DEFAULT.rookie), ...(parsed.rookie || {}) };
+    s.rookie.stars = { ...(s.rookie.stars || {}) };
+    s.rookie.letters = { ...(s.rookie.letters || {}) };
+    s.stickers = [...(parsed.stickers || [])];
     s.trophies = [...(parsed.trophies || [])];
     return s;
   } catch {
@@ -90,19 +194,52 @@ export function loadSave() {
 export function persist(state) {
   try {
     state.lastPlayed = Date.now();
-    localStorage.setItem(KEY, JSON.stringify(state));
+    localStorage.setItem(keyFor(readProfiles().active), JSON.stringify(state));
   } catch {
     /* private mode / quota — game still plays */
   }
 }
 
+/** Erase the active profile's progress (keeps the profile itself). */
 export function resetSave() {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    /* ignore */
-  }
-  return structuredClone(DEFAULT);
+  const p = readProfiles();
+  const rec = p.list.find((x) => x.id === p.active);
+  try { localStorage.removeItem(keyFor(p.active)); } catch { /* ignore */ }
+  const s = structuredClone(DEFAULT);
+  if (rec) { s.name = rec.name; s.mode = rec.mode; s.buddy = rec.buddy; }
+  return s;
+}
+
+export function buddyFor(save) {
+  return BUDDIES.find((b) => b.id === save.buddy) || BUDDIES[0];
+}
+
+export function isRookie(save) {
+  return save.mode === "rookie";
+}
+
+/** Add experience; returns the new rank if the player just ranked up. */
+export function addXp(save, amount) {
+  const before = rankFor(save.xp).name;
+  save.xp += Math.max(0, Math.round(amount));
+  const after = rankFor(save.xp);
+  return after.name !== before ? after : null;
+}
+
+export function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+/** Update the daily streak; returns true when a new day's gift is available. */
+export function touchDaily(save) {
+  const today = todayKey();
+  if (save.daily.last === today) return save.daily.claimed !== today;
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const yesterday = `${y.getFullYear()}-${y.getMonth() + 1}-${y.getDate()}`;
+  save.daily.streak = save.daily.last === yesterday ? (save.daily.streak || 0) + 1 : 1;
+  save.daily.last = today;
+  return true;
 }
 
 export function teamColors(save) {

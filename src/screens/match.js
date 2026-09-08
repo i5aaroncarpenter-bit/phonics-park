@@ -5,7 +5,7 @@
  */
 
 import { getStage, buildGamePlan, retrySpec, gradeYards } from "../curriculum.js";
-import { recordMastery, teamColors, helmetStyle } from "../save.js";
+import { recordMastery, teamColors, helmetStyle, buddyFor, isRookie } from "../save.js";
 import { createField } from "../field.js";
 import { createFX } from "../fx.js";
 import { sfx, startMusic, stopMusic, crowd, crowdOff, musicVolume } from "../audio.js";
@@ -64,7 +64,7 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
         <div class="yard-chip" id="yard-chip">${100 - START_YARD} yards to touchdown</div>
         <div class="coin-chip"><span class="coin-ico">${ICON.coin}</span><b id="coins">0</b></div>
         <div class="streak-badge" id="streak" hidden>🔥 ON FIRE</div>
-        <div class="coach-bubble" id="coach" hidden><span class="coach-face">🧢</span><span id="coach-text"></span></div>
+        <div class="coach-bubble" id="coach" hidden><span class="coach-face">${buddyFor(save).emoji}</span><span id="coach-text"></span></div>
       </div>
       <div class="play-panel" id="panel"></div>
     </section>
@@ -184,10 +184,11 @@ export function playMatch(app, { save, persist, stageId, heat = 1, onDone, onQui
     const tKey = spec.type + ":" + (spec.variant || "");
     const first = !save.tutorials[tKey];
     if (first) { save.tutorials[tKey] = true; persist(); }
+    const rookie = isRookie(save);
     return {
       save, fx, first,
-      hints: stage.id <= 4,
-      limitMs: spec.limitMs,
+      hints: stage.id <= 4 || rookie,
+      limitMs: rookie ? Math.round(spec.limitMs * 2.5) : spec.limitMs,
     };
   }
 

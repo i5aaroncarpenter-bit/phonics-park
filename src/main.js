@@ -1,4 +1,4 @@
-import { loadSave, persist as persistSave, awardTrophy } from "./save.js";
+import { loadSave, persist as persistSave, awardTrophy, listProfiles, createProfile, setActiveProfile, updateProfileMeta, isRookie, touchDaily } from "./save.js";
 import { STAGES, buildCampStage } from "./curriculum.js";
 import { setMuted, unlock, startMusic, stopMusic, sfx } from "./audio.js";
 import { initSpeech, setSpeechRate, setSoundStyle, stopSpeech, preloadSounds } from "./speech.js";
@@ -10,6 +10,11 @@ import { renderClipboard } from "./screens/clipboard.js";
 import { renderResult } from "./screens/result.js";
 import { playMatch } from "./screens/match.js";
 import { renderCamp } from "./screens/camp.js";
+import { renderLeague } from "./screens/league.js";
+import { renderStickers } from "./screens/stickers.js";
+import { newProfileDialog } from "./screens/title.js";
+import { runLittleLeague } from "./rookie/run.js";
+import { openDailyGift, openMysteryBox, awardXp } from "./rewards.js";
 import { DRILLS } from "./camp/data.js";
 import { runVowelKicks } from "./camp/vowels.js";
 import { runSoundTwins } from "./camp/twins.js";
@@ -51,21 +56,66 @@ function saveName(name) {
   if (name && name !== save.name) {
     save.name = name;
     persist();
+    updateProfileMeta(save);
   }
+}
+
+function applySettings() {
+  setMuted(!!save.mute);
+  setSpeechRate(save.voiceRate || 0.92);
+  setSoundStyle(save.soundStyle || "pure");
 }
 
 function goTitle() {
   cleanup();
   if (!save.mute) startMusic("menu");
+  const giftReady = touchDaily(save);
+  persist();
   renderTitle(app, {
-    save,
-    onPlay({ name }) { saveName(name); unlock(); goSeason(); },
+    save, giftReady,
+    onPlay({ name }) { saveName(name); unlock(); if (isRookie(save)) goLeague(); else goSeason(); },
     onCamp({ name }) { saveName(name); unlock(); goCamp(); },
+    onStickers({ name }) { saveName(name); goStickers(goTitle); },
+    onGift({ name }) { saveName(name); unlock(); openDailyGift(app, save, () => { persist(); goTitle(); }); },
     onLocker({ name }) { saveName(name); goLocker(); },
     onTrophies({ name }) { saveName(name); goTrophies(); },
     onClipboard({ name }) { saveName(name); goClipboard(); },
+    onSwitchProfile(id) { persist(); setActiveProfile(id); save = loadSave(); applySettings(); goTitle(); },
+    onNewProfile(info) { persist(); save = createProfile(info); applySettings(); goTitle(); },
     onToggleMute: muteTo,
   });
+}
+
+function goLeague() {
+  cleanup();
+  if (!save.mute) startMusic("menu");
+  renderLeague(app, {
+    save,
+    onPlayStage(id) { goLittle(id); },
+    onStickers() { goStickers(goLeague); },
+    onBigLeague: goSeason,
+    onBack: goTitle,
+    onToggleMute: muteTo,
+  });
+}
+
+function goLittle(stageId) {
+  cleanup();
+  stopMusic();
+  unlock();
+  runLittleLeague(app, {
+    save, persist, stageId,
+    onToggleMute: muteTo,
+    onQuit: goLeague,
+    onReplay() { goLittle(stageId); },
+    onDone() { persist(); updateProfileMeta(save); goLeague(); },
+  });
+}
+
+function goStickers(back) {
+  cleanup();
+  if (!save.mute) startMusic("menu");
+  renderStickers(app, { save, onBack: back || goTitle, onToggleMute: muteTo });
 }
 
 function goSeason() {
@@ -183,14 +233,28 @@ function finishGame(stats) {
   persist();
 
   cleanup();
+  const afterResult = (next) => async () => {
+    if (stats.won) {
+      openMysteryBox(app, save, { coins: 20 + stats.stars * 10, onDone: async () => { await awardXp(app, save, 40 + stats.correct * 5); persist(); next(); } });
+    } else {
+      await awardXp(app, save, stats.correct * 5);
+      persist();
+      next();
+    }
+  };
   renderResult(app, {
     save, stats, newTrophies,
-    onAgain() { goPlay(id); },
-    onNext() { goPlay(Math.min(STAGES.length, id + 1)); },
-    onSeason: goSeason,
+    onAgain: afterResult(() => goPlay(id)),
+    onNext: afterResult(() => goPlay(Math.min(STAGES.length, id + 1))),
+    onSeason: afterResult(goSeason),
   });
 }
 
 window.addEventListener("pointerdown", () => { unlock(); preloadSounds(); if (!save.mute && !app.querySelector(".match")) startMusic("menu"); }, { once: true });
 window.addEventListener("keydown", (e) => { if (e.key === "Escape") sfx("tap"); });
-goTitle();
+if (!listProfiles().length) {
+  goTitle();
+  newProfileDialog(app, (info) => { save = createProfile(info); applySettings(); goTitle(); }, { first: true });
+} else {
+  goTitle();
+}

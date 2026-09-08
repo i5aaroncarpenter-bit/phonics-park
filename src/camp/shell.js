@@ -3,7 +3,7 @@
  * stadium canvas + FX, a play panel, coach captions and the result card.
  */
 
-import { teamColors, helmetStyle } from "../save.js";
+import { teamColors, helmetStyle, buddyFor } from "../save.js";
 import { createField } from "../field.js";
 import { createFX } from "../fx.js";
 import { sfx, startMusic, stopMusic, crowd, crowdOff, musicVolume } from "../audio.js";
@@ -32,7 +32,7 @@ export function createDrill(app, { save, drill, onToggleMute, onQuit, los = 30 }
         <canvas class="stadium" id="stadium"></canvas>
         <div class="drill-clock" id="clock" hidden><i id="clock-fill"></i><span id="clock-text"></span></div>
         <div class="coin-chip"><span class="coin-ico">${ICON.coin}</span><b id="coins">0</b></div>
-        <div class="coach-bubble" id="coach" hidden><span class="coach-face">🧢</span><span id="coach-text"></span></div>
+        <div class="coach-bubble" id="coach" hidden><span class="coach-face">${buddyFor(save).emoji}</span><span id="coach-text"></span></div>
       </div>
       <div class="play-panel drill-panel" id="panel"></div>
     </section>
@@ -168,6 +168,7 @@ export function createDrill(app, { save, drill, onToggleMute, onQuit, los = 30 }
     save.camp[drill.id] = rec;
     save.totals.plays += S.total;
     save.totals.correct += S.correct;
+    save.xp = (save.xp || 0) + S.correct * 3;
     startMusic(stars >= 2 ? "victory" : "menu");
     if (stars >= 2) { sfx("win"); fx.rain(2500); } else sfx("cheer");
     const card = el(`
