@@ -3,7 +3,7 @@ import { teamColors, helmetStyle } from "../save.js";
 import { createField } from "../field.js";
 import { sfx } from "../audio.js";
 
-export function renderTitle(app, { save, onPlay, onLocker, onTrophies, onClipboard, onToggleMute }) {
+export function renderTitle(app, { save, onPlay, onCamp, onLocker, onTrophies, onClipboard, onToggleMute }) {
   const colors = teamColors(save);
   app.innerHTML = `
     <section class="screen title-screen">
@@ -23,7 +23,10 @@ export function renderTitle(app, { save, onPlay, onLocker, onTrophies, onClipboa
           </div>
         </div>
         <div class="title-actions">
-          <button class="btn btn-go btn-huge" id="play-btn" type="button">${ICON.play} PLAY</button>
+          <div class="row">
+            <button class="btn btn-go btn-huge" id="play-btn" type="button">${ICON.play} PLAY</button>
+            <button class="btn btn-camp btn-huge" id="camp-btn" type="button">🏋️ Camp</button>
+          </div>
           <div class="row">
             <button class="btn btn-soft" id="locker-btn" type="button">🧢 Locker</button>
             <button class="btn btn-soft" id="trophy-btn" type="button">${ICON.trophy} Trophies</button>
@@ -63,6 +66,7 @@ export function renderTitle(app, { save, onPlay, onLocker, onTrophies, onClipboa
   const getName = () => (nameEl.value || "Ezekiel").trim().slice(0, 14) || "Ezekiel";
 
   app.querySelector("#play-btn").onclick = () => { sfx("whistle"); onPlay({ name: getName() }); };
+  app.querySelector("#camp-btn").onclick = () => { sfx("whistle"); onCamp({ name: getName() }); };
   app.querySelector("#locker-btn").onclick = () => { sfx("tap"); onLocker({ name: getName() }); };
   app.querySelector("#trophy-btn").onclick = () => { sfx("tap"); onTrophies({ name: getName() }); };
   app.querySelector("#clip-btn").onclick = () => { sfx("tap"); onClipboard({ name: getName() }); };

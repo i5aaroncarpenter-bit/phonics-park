@@ -56,6 +56,7 @@ const DEFAULT = {
   owned: { helmets: ["classic"], celebrations: ["spike"] },
   mastery: {},
   tutorials: {},
+  camp: {},
   totals: { plays: 0, correct: 0, touchdowns: 0, yards: 0, games: 0, words: 0, streak: 0 },
   lastPlayed: 0,
 };
@@ -78,6 +79,7 @@ export function loadSave() {
     s.wins = { ...(parsed.wins || {}) };
     s.mastery = { ...(parsed.mastery || {}) };
     s.tutorials = { ...(parsed.tutorials || {}) };
+    s.camp = { ...(parsed.camp || {}) };
     s.trophies = [...(parsed.trophies || [])];
     return s;
   } catch {

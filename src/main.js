@@ -9,6 +9,15 @@ import { renderTrophies } from "./screens/trophies.js";
 import { renderClipboard } from "./screens/clipboard.js";
 import { renderResult } from "./screens/result.js";
 import { playMatch } from "./screens/match.js";
+import { renderCamp } from "./screens/camp.js";
+import { DRILLS } from "./camp/data.js";
+import { runVowelKicks } from "./camp/vowels.js";
+import { runSoundTwins } from "./camp/twins.js";
+import { runWordFamilies } from "./camp/families.js";
+import { runSoundCatch } from "./camp/catch.js";
+import { runBlendBlitz } from "./camp/blitz.js";
+
+const DRILL_RUNNERS = { vowels: runVowelKicks, twins: runSoundTwins, families: runWordFamilies, catch: runSoundCatch, blitz: runBlendBlitz };
 
 const app = document.getElementById("app");
 window.__pbDebug = /[?&]debug/.test(location.search);
@@ -51,6 +60,7 @@ function goTitle() {
   renderTitle(app, {
     save,
     onPlay({ name }) { saveName(name); unlock(); goSeason(); },
+    onCamp({ name }) { saveName(name); unlock(); goCamp(); },
     onLocker({ name }) { saveName(name); goLocker(); },
     onTrophies({ name }) { saveName(name); goTrophies(); },
     onClipboard({ name }) { saveName(name); goClipboard(); },
@@ -64,9 +74,32 @@ function goSeason() {
   renderSeason(app, {
     save,
     onPlayStage(id) { goPlay(id); },
-    onCamp() { goPlay(buildCampStage(save)); },
+    onCamp: goCamp,
     onBack: goTitle,
     onToggleMute: muteTo,
+  });
+}
+
+function goCamp() {
+  cleanup();
+  if (!save.mute) startMusic("menu");
+  renderCamp(app, { save, onDrill: goDrill, onBack: goSeason, onToggleMute: muteTo });
+}
+
+function goDrill(id) {
+  cleanup();
+  stopMusic();
+  unlock();
+  if (id === "coach") { goPlay(buildCampStage(save)); return; }
+  const drill = DRILLS.find((d) => d.id === id);
+  const run = DRILL_RUNNERS[id];
+  if (!drill || !run) { goCamp(); return; }
+  run(app, {
+    save, persist, drill,
+    onToggleMute: muteTo,
+    onQuit: goCamp,
+    onReplay() { goDrill(id); },
+    onCamp() { persist(); goCamp(); },
   });
 }
 
@@ -111,13 +144,16 @@ function finishGame(stats) {
 
   if (stats.stage && stats.stage.camp) {
     if (save.totals.words >= 100) give("century");
+    const rec = save.camp.coach || { best: 0, stars: 0, plays: 0 };
+    const stars = stats.acc >= 0.9 ? 3 : stats.acc >= 0.7 ? 2 : stats.acc >= 0.5 ? 1 : 0;
+    save.camp.coach = { best: Math.max(rec.best, stats.correct * 10), stars: Math.max(rec.stars, stars), plays: rec.plays + 1 };
     persist();
     cleanup();
     renderResult(app, {
       save, stats, newTrophies,
       onAgain() { goPlay(buildCampStage(save)); },
-      onNext: goSeason,
-      onSeason: goSeason,
+      onNext: goCamp,
+      onSeason: goCamp,
     });
     return;
   }

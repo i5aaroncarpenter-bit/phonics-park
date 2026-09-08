@@ -19,8 +19,8 @@ export function renderSeason(app, { save, onPlayStage, onCamp, onBack, onToggleM
       <div class="season-scroll">
         <button class="camp-card" id="camp" type="button">
           <span class="camp-emoji">🏋️</span>
-          <span class="camp-text"><b>Training Camp</b><small>A quick practice drill on the sounds that trick you most. Earn coins, no pressure.</small></span>
-          <span class="btn btn-soft">Practice</span>
+          <span class="camp-text"><b>Training Camp</b><small>Vowel Kicks, Sound Twins, Word Family Huddle, Sound Catch, Blend Blitz — fun drills on the building blocks of reading.</small></span>
+          <span class="btn btn-soft">Drills</span>
         </button>
         <div class="season-path">
           ${STAGES.map((st, i) => {

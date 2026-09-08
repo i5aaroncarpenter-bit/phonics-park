@@ -33,7 +33,7 @@ export function renderResult(app, { save, stats, newTrophies = [], onAgain, onNe
         ${newTrophies.length ? `<div class="new-trophies">${newTrophies.map((id) => { const t = TROPHIES.find((x) => x.id === id); return `<span class="new-trophy">${t.emoji} ${esc(t.name)}</span>`; }).join("")}</div>` : ""}
         ${stats.missed.length ? `<div class="missed"><h4>Words to practice — tap to hear</h4><div class="missed-list">${stats.missed.slice(0, 8).map((w) => `<button class="word-chip" type="button" data-w="${esc(w)}">${esc(w)}</button>`).join("")}</div></div>` : `<p class="perfect-line">${stats.perfect ? "PERFECT GAME! Every play was right!" : "Great reading!"}</p>`}
         <div class="row result-actions">
-          <button class="btn" id="season" type="button">${ICON.home} Season</button>
+          <button class="btn" id="season" type="button">${ICON.home} ${stage.camp ? "Camp" : "Season"}</button>
           <button class="btn" id="again" type="button">${ICON.replay} Play again</button>
           ${canNext ? `<button class="btn btn-go" id="next" type="button">Next game ${ICON.play}</button>` : ""}
         </div>
