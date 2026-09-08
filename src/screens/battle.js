@@ -8,7 +8,9 @@
 import { el, button, progressBar, modal, toast, pick } from "../ui.js";
 import { heroSVG, enemyView } from "../hero.js";
 import { heroStats } from "../data/gear.js";
-import { SPECIALS, arenaWave, arenaReward } from "../data/battles.js";
+import { SPECIALS, ARENA, arenaWave, arenaReward } from "../data/battles.js";
+
+const ARENA_TITLE = ARENA.name;
 import { getVerse, verseText } from "../data/verses.js";
 import { isMastered, recordBattleWin, checkBadges, bumpOrder, grant } from "../engine/progress.js";
 import { makeQuestion, isCorrect } from "../engine/questions.js";
@@ -83,6 +85,16 @@ export function renderBattle(app, ctx) {
     state.combo = 0;
 
     const field = el("div", { class: `field kind-${state.enemy.kind}` });
+    const bar = el(
+      "div",
+      { class: "field-bar" },
+      button("‹ Retreat", async () => {
+        const r = await modal({ title: "Retreat?", body: arena ? `You keep the ${state.arenaShekels} shekels won so far.` : "No reward for a battle left unfinished. Retreat and train?", buttons: [{ id: "stay", label: "Keep fighting", cls: "btn btn-gold" }, { id: "go", label: "Retreat", cls: "btn" }] });
+        if (r === "go") leave();
+      }, "btn btn-small"),
+      el("span", { class: "field-title", text: arena ? `${ARENA_TITLE} · Wave ${state.wave}` : battle.name }),
+      el("span", { class: "chip small", text: `Turn ${state.turns + 1}` }),
+    );
     const top = el("div", { class: "field-top" });
     const enemyBox = el("div", { class: "fighter enemy" });
     const enemyBar = progressBar(state.enemyHp, state.enemy.hp, "hp enemy-hp");
@@ -98,9 +110,9 @@ export function renderBattle(app, ctx) {
     const log = el("div", { class: "battle-log", text: pick(state.enemy.taunts || ["The enemy approaches!"]) });
     const combo = el("div", { class: "combo" });
     const qbox = el("div", { class: "qbox" });
-    field.append(top, log, combo, qbox);
+    field.append(bar, top, log, combo, qbox);
     wrap.replaceChildren(field);
-    ui = { field, enemyBox, enemyBar, enemyFig, heroBox, heroFig, heroBar, log, combo, qbox };
+    ui = { field, bar, enemyBox, enemyBar, enemyFig, heroBox, heroFig, heroBar, log, combo, qbox };
     refreshBars();
     setTimeout(turn, 700);
   }
@@ -122,6 +134,8 @@ export function renderBattle(app, ctx) {
   function turn() {
     if (!alive) return;
     state.turns += 1;
+    const chip = ui.bar?.querySelector(".chip");
+    if (chip) chip.textContent = `Turn ${state.turns}`;
     const q = makeQuestion(profile, settings, { avoid: state.lastVerse });
     state.lastVerse = q.verse.id;
     askQuestion(q, { seconds: Math.max(4, 8 + stats.speed - state.roarPenalty), cry: false });

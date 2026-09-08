@@ -46,6 +46,7 @@ export function play(root, ctx) {
       if (normalizeWord(t.textContent) === normalizeWord(words[next])) {
         t.classList.add("used");
         slots[next].textContent = words[next];
+        slots[next].style.minWidth = "";
         slots[next].classList.add("filled");
         popNode(slots[next]);
         sfx("tap");

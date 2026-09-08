@@ -43,7 +43,8 @@ export function play(root, ctx, { seconds = 6, maxQuestions = 14, title = "Speed
 
     function reveal(k, cls = "") {
       spans[k].classList.remove("hidden");
-      spans[k].classList.add("shown", cls);
+      spans[k].classList.add("shown");
+      if (cls) spans[k].classList.add(cls);
       spans[k].scrollIntoView({ block: "nearest" });
     }
 

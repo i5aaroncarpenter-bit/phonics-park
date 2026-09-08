@@ -45,11 +45,13 @@ export function currentSharpness(profile, verseId) {
   return Math.max(1, v.sharpness - lost);
 }
 
+/** Mastered verses due for review: dull, or not yet reviewed today and below full shine. */
 export function dullVerses(profile, settings) {
+  const t = today();
   return allVerses(settings)
     .filter((v) => isMastered(profile, v.id))
-    .map((v) => ({ verse: v, sharpness: currentSharpness(profile, v.id) }))
-    .filter((x) => x.sharpness <= 3)
+    .map((v) => ({ verse: v, sharpness: currentSharpness(profile, v.id), reviewedToday: profile.verses[v.id].lastReview === t }))
+    .filter((x) => x.sharpness <= 2 || (!x.reviewedToday && x.sharpness <= 3))
     .sort((a, b) => a.sharpness - b.sharpness);
 }
 

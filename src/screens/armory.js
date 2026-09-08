@@ -4,6 +4,7 @@ import { el, button, topbar, coinPill, fmt, toast, modal } from "../ui.js";
 import { heroSVG } from "../hero.js";
 import { GEAR, SLOTS, gearById, heroStats, tierName } from "../data/gear.js";
 import { checkBadges } from "../engine/progress.js";
+import { BATTLES } from "../data/battles.js";
 import { sfx } from "../audio.js";
 import { coins, sparks, burst } from "../fx.js";
 
@@ -45,7 +46,7 @@ export function renderArmory(app, ctx) {
     );
     const slot = SLOTS.find((s) => s.id === slotId);
     grid.replaceChildren(el("div", { class: "slot-title" }, el("b", { text: slot.armorOf }), el("span", { class: "small muted", text: ` · ${slot.statName}` })));
-    const items = GEAR.filter((g) => g.slot === slotId && g.id !== "staff").sort((a, b) => a.tier - b.tier || a.cost - b.cost);
+    const items = GEAR.filter((g) => g.slot === slotId && g.id !== "staff").sort((a, b) => (a.relic ? 1 : 0) - (b.relic ? 1 : 0) || a.tier - b.tier || a.cost - b.cost);
     for (const g of items) grid.append(gearCard(g));
   }
 
@@ -66,7 +67,10 @@ export function renderArmory(app, ctx) {
     const act = el("div", { class: "gear-actions" });
     if (equipped) act.append(el("span", { class: "badge-equipped", text: "Equipped ✔" }));
     else if (owned) act.append(button("Equip", () => equip(g, card), "btn btn-primary"));
-    else if (g.relic) act.append(el("span", { class: "small muted", text: "🔒 Won in battle" }));
+    else if (g.relic) {
+      const from = BATTLES.find((b) => b.drop === g.id);
+      act.append(el("span", { class: "small muted", text: from ? `🔒 Win: ${from.name}` : "🔒 Won in battle" }));
+    }
     else {
       const b = button(`Buy · 🪙 ${fmt(g.cost)}`, () => buy(g, card), `btn ${canAfford ? "btn-gold" : ""}`);
       b.disabled = !canAfford;

@@ -51,6 +51,7 @@ export function renderForge(app, ctx) {
   startMusic("camp");
 
   function drawSteps() {
+    header.querySelector(".topbar-right").replaceChildren(coinPill(profile));
     steps.replaceChildren();
     if (mode === "sharpen") {
       steps.append(el("div", { class: "sharpen-banner" }, el("span", { text: "✨ Sharpen: a quick review keeps your sword sharp" })));

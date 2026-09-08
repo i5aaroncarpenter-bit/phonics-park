@@ -66,7 +66,7 @@ export function renderCamp(app, ctx) {
   const doors = el("div", { class: "doors" });
   doors.append(
     door("📜", "The Scrolls", inProgress ? `Continue: ${inProgress.ref}` : "Learn a new verse", () => ctx.onScrolls(), "door-scrolls"),
-    door("✨", "Sharpen", dull.length ? `${dull.length} sword${dull.length === 1 ? "" : "s"} need sharpening` : v ? "All swords are sharp" : "Master a verse first", () => (dull.length ? ctx.onSharpen(dull[0].verse) : ctx.onScrolls()), `door-sharpen ${dull.length ? "attention" : ""}`),
+    door("✨", "Sharpen", dull.length ? `${dull.length} sword${dull.length === 1 ? " needs" : "s need"} sharpening` : v ? "All swords are sharp" : "Master a verse first", () => (dull.length ? ctx.onSharpen(dull[0].verse) : ctx.onScrolls()), `door-sharpen ${dull.length ? "attention" : ""}`),
     door("⚔️", "Battle", nextBattle ? `Ready: ${nextBattle.name}` : locked ? `Master ${locked.valor - v} more verse${locked.valor - v === 1 ? "" : "s"} to unlock ${locked.name}` : "All giants have fallen!", () => ctx.onBattles(), `door-battle ${nextBattle ? "attention" : ""}`),
     door("🛠️", "The Armory", `${fmt(profile.shekels)} shekels to spend`, () => ctx.onArmory(), "door-armory"),
     door("🏛️", "Hall of Valor", `${profile.badges.length} badges earned`, () => ctx.onHall(), "door-hall"),

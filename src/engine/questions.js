@@ -10,9 +10,11 @@ import { choicesFor, stripPunct } from "../stages/common.js";
 
 export function questionPool(profile, settings) {
   const all = allVerses(settings);
+  // Only ask about verses the child actually knows. Pad with in-progress
+  // verses only when nothing is mastered yet (e.g. the Arena via a restored save).
   let pool = all.filter((v) => isMastered(profile, v.id));
-  if (pool.length < 3) pool = pool.concat(all.filter((v) => !pool.includes(v) && (profile.verses[v.id]?.stage || 0) >= 2));
-  if (pool.length < 3) pool = pool.concat(all.slice(0, 5).filter((v) => !pool.includes(v)));
+  if (!pool.length) pool = all.filter((v) => (profile.verses[v.id]?.stage || 0) >= 2);
+  if (!pool.length) pool = all.slice(0, 3);
   return pool;
 }
 

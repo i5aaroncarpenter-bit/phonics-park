@@ -471,6 +471,9 @@ select.input { appearance: auto; }
 
 @media (max-width: 520px) {
   .screen { padding: 10px 10px 40px; }
+  .topbar-title h1 { font-size: 1.1rem; }
+  .pill { padding: 5px 9px; font-size: .85rem; }
+  .btn-back { width: 40px; height: 40px; }
   .verse-words { font-size: 1.1rem; }
   .verse-card.big { font-size: 1.1rem; }
   .step-name { display: none; }
@@ -484,3 +487,8 @@ select.input { appearance: auto; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* battle header */
+.field-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; position: relative; }
+.field-title { flex: 1; font-family: var(--font-head); color: var(--gold); font-size: 1rem; text-align: center; }
+.btn-small { min-height: 36px; padding: 6px 12px; font-size: .9rem; }
