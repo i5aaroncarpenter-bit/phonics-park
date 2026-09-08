@@ -13,7 +13,7 @@ import { ICON, esc, muteButton, el, starsHTML } from "../ui.js";
 export function createDrill(app, { save, drill, onToggleMute, onQuit, los = 30 }) {
   const colors = teamColors(save);
   app.innerHTML = `
-    <section class="screen match drill" style="--home:${colors.primary};--home2:${colors.secondary};--away:#6c757d;--away2:#ffffff">
+    <section class="screen match drill drill-${drill.id}" style="--home:${colors.primary};--home2:${colors.secondary};--away:#6c757d;--away2:#ffffff">
       <header class="hud camp-hud">
         <div class="drill-title"><span class="drill-emoji">${drill.emoji}</span><b>${esc(drill.title)}</b></div>
         <div class="hud-mid">

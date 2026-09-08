@@ -576,6 +576,9 @@ h1, h2, h3, h4 { font-family: var(--head); margin: 0; }
 .punt.caught { background: linear-gradient(180deg, #8ce99a, #2ec27e); transition: opacity 0.4s; opacity: 0; }
 .punt.fumble { background: linear-gradient(180deg, #ffb3b8, #ff6b6b); transition: opacity 0.4s; opacity: 0; }
 
+.drill-catch .field-wrap { flex: 1 1 auto; height: auto; min-height: 260px; }
+.drill-catch .play-panel { flex: 0 0 auto; }
+
 /* ---------- responsive ---------- */
 @media (min-width: 900px) and (orientation: landscape) {
   .match { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; gap: 8px; }
@@ -609,6 +612,14 @@ h1, h2, h3, h4 { font-family: var(--head); margin: 0; }
   .slot { width: 52px; height: 52px; font-size: 26px; }
   .drive-meter { width: 110px; }
   .field-wrap { height: 33%; min-height: 160px; }
+  .uprights { gap: 6px; }
+  .upright .post { width: 6px; height: 62px; }
+  .upright b { width: 46px; height: 48px; font-size: 28px; margin-bottom: 14px; }
+  .upright::after { bottom: 11px; height: 5px; }
+  .drill-title b { display: none; }
+  .twin-grid { grid-template-columns: repeat(4, minmax(56px, 80px)); gap: 8px; }
+  .punt { font-size: 20px; padding: 4px 10px 4px 6px; }
+  .camp-hud { grid-template-columns: auto auto 1fr auto; }
 }
 @media (max-height: 480px) and (orientation: landscape) {
   .field-wrap { height: 42%; min-height: 140px; }
