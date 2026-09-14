@@ -18,8 +18,12 @@ start after the first tap on the page (browser autoplay rules).
 
 ## How it plays
 
-1. **Answer the call** — each child creates a warrior (name, skin, hair, tunic).
-   Siblings share a device and compete on the Roll of the Mighty.
+1. **Answer the call** — each child creates a warrior: **boy or girl**, name,
+   skin, hair color and style (short, curly, long, braids, ponytail, bun),
+   tunic. Girls wear a longer tunic and headband and rise from Shepherd Girl to
+   Mighty Woman of Valor. Looks can be changed any time at the **Tailor's
+   Mirror** in camp without touching progress or gear. Siblings share a device
+   and compete on the Roll of the Mighty.
 2. **The Scrolls** — 106 verses in 12 themed scrolls, from short starters
    (*The Shepherd's Sling*) through each piece of the Armor of God to epic
    passages (*The Whole Armor of God*). Two public-domain translations ship in
@@ -36,6 +40,11 @@ start after the first tap on the page (browser autoplay rules).
 4. **Sharpen** — mastered verses are swords with 1–5 stars. Stars fade on a
    spaced schedule (1, 2, 4, 7, 14, 30 days); a quick review re-sharpens them.
    Reciting a verse aloud to a parent sets it to 5 stars and pays a bonus.
+   **Speak the Sword** does the same with the device microphone: the words stay
+   hidden while the child recites, light up as they are heard, and 85% of the
+   verse heard counts as word-perfect (+20 shekels once per verse per day, sword
+   polished to 5 stars). Works in Chrome, Edge and Safari; other browsers are
+   pointed to the Captain's recite approval.
 5. **The Armory** — six slots that mirror Ephesians 6 (sword, shield, helmet,
    breastplate, belt, sandals) plus cloaks. Four buyable tiers per slot; relics
    (Belt of Truth, Shield of Faith, Sword of the Spirit...) are only won in
@@ -48,9 +57,20 @@ start after the first tap on the page (browser autoplay rules).
    is review. Each battle has a key verse that powers a once-per-fight Battle
    Cry. Victory tells what really happened, with the reference.
    The endless **Arena of the Thirty** opens after Goliath falls.
-7. **Keep coming back** — Today's Orders (three daily quests and a chest),
-   day streaks, ten ranks from Shepherd Boy to Mighty Man of Valor, 22 badges in
-   the Hall of Valor.
+7. **The Gauntlet** — once three verses are mastered: sixty seconds of
+   rapid-fire questions drawn from *every* mastered verse. Two shekels per
+   right answer, a bonus for a new best, three seconds lost per miss. The best
+   score sits on the leaderboard.
+8. **Sibling Duel** — two warriors, one device, five rounds each. Every child
+   is only asked about verses *they* have mastered, so a five-year-old can duel
+   a ten-year-old fairly. Points for right answers, extra for quick ones;
+   winner +40 shekels, the other +15. "Iron sharpens iron" (Proverbs 27:17).
+9. **Keep coming back** — Today's Orders (three daily quests and a chest),
+   day streaks, ten ranks from Shepherd Boy/Girl to Mighty Man/Woman of Valor,
+   28 badges in the Hall of Valor.
+10. **Install it** — the game is a PWA: add it to a phone or tablet home screen
+    (the Tent has a button and instructions) and it opens full screen and plays
+    offline after the first visit.
 
 ## Captain's Tent (parents)
 
@@ -88,10 +108,14 @@ src/data/battles.js   campaign, enemies, arena scaling
 src/data/progress.js  ranks, rewards, badges, review intervals
 src/engine/           progress (mastery, sharpness, orders, badges), questions
 src/stages/           the five Forge mini-games
-src/screens/          title, camp, scrolls, forge, armory, battles, battle, hall, tent, reward
+src/screens/          title, camp, look (creation + mirror), scrolls, forge, speak, gauntlet, duel,
+                      armory, battles, battle, hall, tent, reward
 src/hero.js           SVG warrior and enemy rendering
 src/audio.js          WebAudio sound effects and music
-src/speech.js         Web Speech API read-aloud
+src/speech.js         Web Speech API read-aloud and microphone recognition
+src/engine/spoken.js  scoring for Speak the Sword (verse/transcript alignment)
+src/install.js        service worker registration and install prompt
+manifest.json, sw.js  PWA manifest and offline cache; icons/ app icons
 src/fx.js             particles, coins, confetti, screen shake
 src/save.js           localStorage save with per-child profiles
 ```
