@@ -134,7 +134,7 @@ export function verseWords(words, cls = "verse-words") {
 }
 
 export function encourage() {
-  return pick(["Well done, warrior!", "The word is in your heart!", "Mighty!", "Sharp as iron!", "Stand firm!", "Be strong and courageous!", "Your Captain is proud!", "That is how mighty men train!"]);
+  return pick(["Well done, warrior!", "The word is in your heart!", "Mighty!", "Sharp as iron!", "Stand firm!", "Be strong and courageous!", "Your Captain is proud!", "That is how the mighty train!"]);
 }
 
 export function encourageMiss() {

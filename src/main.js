@@ -4,7 +4,8 @@ import { loadSave, persist as persistSave, activeProfile } from "./save.js";
 import { initFX } from "./fx.js";
 import { unlock, setMusic, setSfx, startMusic } from "./audio.js";
 import { initSpeech, setSpeechEnabled, stopSpeaking } from "./speech.js";
-import { touchStreak, ensureOrders, checkBadges } from "./engine/progress.js";
+import { initInstall } from "./install.js";
+import { touchStreak, ensureOrders, checkBadges, bumpOrder } from "./engine/progress.js";
 import { toast, askPin } from "./ui.js";
 import { renderTitle } from "./screens/title.js";
 import { renderCamp } from "./screens/camp.js";
@@ -15,6 +16,9 @@ import { renderHall } from "./screens/hall.js";
 import { renderTent } from "./screens/tent.js";
 import { renderBattles } from "./screens/battles.js";
 import { renderBattle } from "./screens/battle.js";
+import { renderDuel, chooseRival } from "./screens/duel.js";
+import { renderGauntlet } from "./screens/gauntlet.js";
+import { renderSpeak } from "./screens/speak.js";
 
 const app = document.getElementById("app");
 const save = loadSave();
@@ -23,6 +27,7 @@ let lastScroll = null;
 
 initFX();
 initSpeech();
+initInstall();
 setSpeechEnabled(save.settings.tts);
 setMusic(save.settings.music);
 setSfx(save.settings.sfx);
@@ -80,7 +85,34 @@ function goCamp() {
       onArmory: () => goArmory(),
       onHall: goHall,
       onTent: () => goTent(goCamp),
+      onGauntlet: goGauntlet,
+      onDuel: goDuel,
       refresh: goCamp,
+    })),
+  );
+}
+
+function goGauntlet() {
+  show(() => renderGauntlet(app, profileCtx({ onDone: goCamp })));
+}
+
+async function goDuel() {
+  const profile = activeProfile(save);
+  const rival = await chooseRival(save, profile);
+  if (!rival) return;
+  show(() => renderDuel(app, profileCtx({ rival, onDone: goCamp })));
+}
+
+function goSpeak(verse, back) {
+  show(() =>
+    renderSpeak(app, profileCtx({
+      verse,
+      onDone: back,
+      listened: () => {
+        const p = activeProfile(save);
+        if (p && bumpOrder(p, "listen")) toast("Order complete: listened to a verse!", "good");
+        persist();
+      },
     })),
   );
 }
@@ -98,6 +130,10 @@ function goScrolls(openScroll = lastScroll) {
         lastScroll = verse.scroll;
         goForge(verse, { mode: "sharpen", back: () => goScrolls(verse.scroll) });
       },
+      onSpeak: (verse) => {
+        lastScroll = verse.scroll;
+        goSpeak(verse, () => goScrolls(verse.scroll));
+      },
     })),
   );
 }
@@ -110,6 +146,7 @@ function goForge(verse, { mode, startStage, back }) {
       startStage,
       onDone: back,
       onBack: back,
+      onSpeak: (v) => goSpeak(v, back),
     })),
   );
 }

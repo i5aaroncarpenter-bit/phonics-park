@@ -2,7 +2,7 @@
 
 import { el, topbar, coinPill, valorPill, fmt } from "../ui.js";
 import { heroSVG } from "../hero.js";
-import { BADGES, rankFor } from "../data/progress.js";
+import { BADGES, rankFor, rankTitle } from "../data/progress.js";
 import { RELIC_SET, gearById } from "../data/gear.js";
 import { BATTLES } from "../data/battles.js";
 import { valor } from "../engine/progress.js";
@@ -19,7 +19,8 @@ export function renderHall(app, ctx) {
   sorted.forEach((p, i) => {
     const r = rankFor(p.xp);
     board.append(
-      el("div", { class: `board-row ${p.id === profile.id ? "me" : ""}` }, el("span", { class: "board-pos", text: i === 0 ? "👑" : `#${i + 1}` }), heroSVG(p, { size: 64 }), el("div", { class: "board-info" }, el("b", { text: p.name }), el("div", { class: "small muted", text: `${r.icon} ${r.name}` })), el("div", { class: "board-num" }, el("b", { text: String(valor(p)) }), el("div", { class: "small muted", text: "verses" })), el("div", { class: "board-num" }, el("b", { text: String(p.stats.battlesWon) }), el("div", { class: "small muted", text: "battles" })), el("div", { class: "board-num" }, el("b", { text: `🔥${p.streak.count}` }), el("div", { class: "small muted", text: "streak" }))),
+      el("div", { class: `board-row ${p.id === profile.id ? "me" : ""}` }, el("span", { class: "board-pos", text: i === 0 ? "👑" : `#${i + 1}` }), heroSVG(p, { size: 64 }), el("div", { class: "board-info" }, el("b", { text: p.name }), el("div", { class: "small muted", text: `${r.icon} ${rankTitle(r, p)}` })),
+        el("div", { class: "board-nums" }, num(valor(p), "verses"), num(p.stats.battlesWon, "battles"), num(p.stats.duelWins || 0, "duels"), num(p.stats.gauntletBest || 0, "gauntlet"), num(`🔥${p.streak.count}`, "streak"))),
     );
   });
   wrap.append(board);
@@ -51,10 +52,14 @@ export function renderHall(app, ctx) {
     el("div", { class: "record" },
       rec("Forge stages", s.stagesDone), rec("Swords sharpened", s.sharpenDone), rec("Battles won", s.battlesWon),
       rec("Flawless blades", s.perfectBlades), rec("Recited aloud", s.recited), rec("Shekels earned", fmt(s.shekelsEarned)),
-      rec("Best arena wave", profile.arenaBest), rec("Orders completed", profile.orders.completedCount || 0)),
+      rec("Best arena wave", profile.arenaBest), rec("Orders completed", profile.orders.completedCount || 0),
+      rec("Spoken word-perfect", s.spoken || 0), rec("Best Gauntlet", s.gauntletBest || 0), rec("Duels won", `${s.duelWins || 0} / ${s.duelsPlayed || 0}`)),
   );
   app.replaceChildren(wrap);
 
+  function num(val, label) {
+    return el("div", { class: "board-num" }, el("b", { text: String(val) }), el("div", { class: "small muted", text: label }));
+  }
   function rec(label, val) {
     return el("div", { class: "rec" }, el("b", { text: String(val) }), el("span", { class: "small muted", text: label }));
   }

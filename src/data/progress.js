@@ -1,7 +1,7 @@
 /** Ranks (by XP), badges (Hall of Valor), and the shekel economy. */
 
 export const RANKS = [
-  { id: "shepherd", name: "Shepherd Boy", xp: 0, icon: "🐑" },
+  { id: "shepherd", name: "Shepherd Boy", nameF: "Shepherd Girl", xp: 0, icon: "🐑" },
   { id: "recruit", name: "Recruit", xp: 120, icon: "🪖" },
   { id: "shieldbearer", name: "Shield-bearer", xp: 320, icon: "🛡️" },
   { id: "soldier", name: "Soldier", xp: 650, icon: "⚔️" },
@@ -10,13 +10,18 @@ export const RANKS = [
   { id: "captain100", name: "Captain of a Hundred", xp: 2500, icon: "🏳️" },
   { id: "thirty", name: "One of the Thirty", xp: 3500, icon: "🌟" },
   { id: "three", name: "One of the Three", xp: 4800, icon: "💫" },
-  { id: "mighty", name: "Mighty Man of Valor", xp: 6500, icon: "👑" },
+  { id: "mighty", name: "Mighty Man of Valor", nameF: "Mighty Woman of Valor", xp: 6500, icon: "👑" },
 ];
 
 export function rankFor(xp) {
   let r = RANKS[0];
   for (const k of RANKS) if (xp >= k.xp) r = k;
   return r;
+}
+
+/** Rank title as the child should read it (a few ranks have a girl's form). */
+export function rankTitle(rank, profile) {
+  return profile?.look?.body === "girl" && rank.nameF ? rank.nameF : rank.name;
 }
 
 export function nextRank(xp) {
@@ -35,6 +40,12 @@ export const MASTERY_BONUS = { shekels: 25, xp: 50 };
 export const RECITE_BONUS = { shekels: 30, xp: 40 };
 export const SHARPEN_REWARD = { shekels: 8, xp: 10, perfect: 4 };
 export const ORDERS_CHEST = { shekels: 40, xp: 30 };
+/** Speak the Sword: word-perfect recitation heard by the device microphone. */
+export const SPOKEN_BONUS = { shekels: 20, xp: 25, near: 8 };
+/** The Gauntlet: 60 seconds of rapid-fire questions on mastered verses. */
+export const GAUNTLET = { seconds: 60, perCorrect: 2, xpPerCorrect: 2, newBest: 20, streakBonus: 5, minValor: 3 };
+/** Sibling Duel: two warriors, one device, best score wins. */
+export const DUEL = { rounds: 5, win: { shekels: 40, xp: 30 }, lose: { shekels: 15, xp: 15 }, draw: { shekels: 25, xp: 20 } };
 
 export const BADGES = [
   { id: "first_verse", name: "First Blood", desc: "Master your first verse", icon: "🗡️" },
@@ -59,6 +70,12 @@ export const BADGES = [
   { id: "rich", name: "Treasury of Ophir", desc: "Hold 1,000 shekels at once", icon: "🪙" },
   { id: "geared", name: "Fully Armed", desc: "Equip every slot with bought or won gear", icon: "🦺" },
   { id: "orders7", name: "Faithful Soldier", desc: "Complete Today's Orders 7 times", icon: "📋" },
+  { id: "spoken", name: "Voice of Valor", desc: "Say a verse aloud word-perfect (Speak the Sword)", icon: "🎤" },
+  { id: "spoken10", name: "Loud and Clear", desc: "Speak 10 verses aloud word-perfect", icon: "📯" },
+  { id: "gauntlet15", name: "Iron Endurance", desc: "Answer 15 in one Gauntlet run", icon: "⏱️" },
+  { id: "gauntlet30", name: "Unbroken", desc: "Answer 30 in one Gauntlet run", icon: "🏃" },
+  { id: "duel_win", name: "Iron Sharpens Iron", desc: "Win a Sibling Duel (Proverbs 27:17)", icon: "🤺" },
+  { id: "duel5", name: "Champion of the Camp", desc: "Win 5 Sibling Duels", icon: "🥇" },
 ];
 
 export const badgeById = new Map(BADGES.map((b) => [b.id, b]));

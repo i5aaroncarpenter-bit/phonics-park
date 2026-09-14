@@ -1,0 +1,19 @@
+{
+  "name": "Mighty Men — Warriors of the Word",
+  "short_name": "Mighty Men",
+  "description": "A Bible verse memory game: memorize God's word, earn shekels, forge your armor, and fight the giants of Gath.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1b1230",
+  "theme_color": "#1b1230",
+  "lang": "en",
+  "categories": ["education", "games", "kids"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

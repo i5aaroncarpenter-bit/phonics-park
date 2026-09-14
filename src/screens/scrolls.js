@@ -4,8 +4,9 @@ import { el, button, topbar, coinPill, valorPill, stars, progressBar } from "../
 import { allScrolls, verseText } from "../data/verses.js";
 import { STAGE_REWARDS } from "../data/progress.js";
 import { scrollProgress, isMastered, currentSharpness, valor, STAGE_COUNT } from "../engine/progress.js";
-import { speak, stopSpeaking } from "../speech.js";
+import { speak, stopSpeaking, recognitionAvailable } from "../speech.js";
 import { sfx } from "../audio.js";
+import { today } from "../save.js";
 
 export function renderScrolls(app, ctx) {
   const { save, profile } = ctx;
@@ -59,6 +60,7 @@ export function renderScrolls(app, ctx) {
     actions.append(button("🔊", () => speak(text), "btn btn-icon btn-speak"));
     if (mastered) {
       actions.append(button(sharp <= 3 ? "✨ Sharpen (+8 🪙)" : "✨ Polish", () => { stopSpeaking(); ctx.onSharpen(v); }, `btn ${sharp <= 3 ? "btn-gold" : ""}`));
+      if (recognitionAvailable()) actions.append(button(st.spokenOn === today() ? "🎤 Speak it" : "🎤 Speak it (+20 🪙)", () => { stopSpeaking(); ctx.onSpeak(v); }, "btn btn-mic-small"));
       actions.append(button("Practice again", () => { stopSpeaking(); ctx.onForge(v, 0); }, "btn"));
     } else {
       actions.append(button(st.stage > 0 ? "🔥 Continue forging" : "🔥 Forge this verse", () => { stopSpeaking(); ctx.onForge(v); }, "btn btn-gold"));

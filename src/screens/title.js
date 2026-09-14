@@ -2,10 +2,12 @@
 
 import { el, button, fmt, modal, toast } from "../ui.js";
 import { heroSVG } from "../hero.js";
-import { newProfile, LOOKS } from "../save.js";
-import { rankFor } from "../data/progress.js";
+import { newProfile } from "../save.js";
+import { lookEditor } from "./look.js";
+import { rankFor, rankTitle } from "../data/progress.js";
 import { valor } from "../engine/progress.js";
 import { sfx } from "../audio.js";
+import { canInstall, promptInstall, onInstallChange } from "../install.js";
 
 export function renderTitle(app, ctx) {
   const { save } = ctx;
@@ -24,7 +26,7 @@ export function renderTitle(app, ctx) {
       { class: "roll-card", type: "button", onClick: () => { sfx("drum"); ctx.onChoose(p); } },
       el("div", { class: "roll-pos", text: i === 0 && sorted.length > 1 ? "👑" : `#${i + 1}` }),
       heroSVG(p, { size: 120 }),
-      el("div", { class: "roll-info" }, el("b", { class: "roll-name", text: p.name }), el("div", { class: "roll-rank", text: `${rank.icon} ${rank.name}` }), el("div", { class: "roll-stats", text: `⚔️ ${valor(p)} verses · 🪙 ${fmt(p.shekels)}` })),
+      el("div", { class: "roll-info" }, el("b", { class: "roll-name", text: p.name }), el("div", { class: "roll-rank", text: `${rank.icon} ${rankTitle(rank, p)}` }), el("div", { class: "roll-stats", text: `⚔️ ${valor(p)} verses · 🪙 ${fmt(p.shekels)}` })),
     );
     roll.append(card);
   });
@@ -33,52 +35,24 @@ export function renderTitle(app, ctx) {
   const actions = el("div", { class: "title-actions" });
   actions.append(button("＋ New Warrior", () => createFlow(), "btn btn-gold btn-big"));
   actions.append(button("⛺ Captain's Tent", () => ctx.onTent(), "btn"));
+  const installBtn = button("📲 Install app", async () => { if (await promptInstall()) toast("Installed! Look for the sword on your home screen.", "good"); }, "btn btn-install");
+  installBtn.hidden = !canInstall();
+  const offInstall = onInstallChange((can) => { installBtn.hidden = !can; });
+  actions.append(installBtn);
   wrap.append(actions);
   wrap.append(el("p", { class: "title-foot", text: "Memorize God's word · Earn shekels · Forge your armor · Fight the giants" }));
   app.replaceChildren(wrap);
 
-  function createFlow() {
+  function createFlow(draft = newProfile("", {})) {
     sfx("page");
-    const draft = newProfile("", {});
-    const preview = el("div", { class: "create-preview" });
     const nameInput = el("input", { class: "input name-input", type: "text", maxlength: "16", placeholder: "Warrior's name", autocomplete: "off" });
-    const redraw = () => preview.replaceChildren(heroSVG(draft, { size: 220 }));
-    redraw();
-
-    const swatchRow = (label, key, values, isStyle = false) => {
-      const row = el("div", { class: "swatch-row" }, el("span", { class: "swatch-label", text: label }));
-      const group = el("div", { class: "swatches" });
-      for (const v of values) {
-        const s = el("button", { class: `swatch ${draft.look[key] === v ? "on" : ""}`, type: "button", title: v, style: isStyle ? {} : { background: v }, text: isStyle ? v : "" });
-        s.addEventListener("click", () => {
-          draft.look[key] = v;
-          group.querySelectorAll(".swatch").forEach((x) => x.classList.remove("on"));
-          s.classList.add("on");
-          sfx("tap");
-          redraw();
-        });
-        group.append(s);
-      }
-      row.append(group);
-      return row;
-    };
-
-    const form = el(
-      "div",
-      { class: "create-form" },
-      preview,
-      nameInput,
-      swatchRow("Skin", "skin", LOOKS.skin),
-      swatchRow("Hair", "hair", LOOKS.hair),
-      swatchRow("Style", "hairStyle", LOOKS.hairStyle, true),
-      swatchRow("Tunic", "tunic", LOOKS.tunic),
-    );
-    modal({ title: "Join the Mighty Men", body: form, buttons: [{ id: "cancel", label: "Back", cls: "btn" }, { id: "ok", label: "Answer the call!", cls: "btn btn-gold" }], cls: "modal-wide" }).then((r) => {
+    const editor = lookEditor(draft, { nameInput });
+    modal({ title: "Join the Mighty", body: editor.el, buttons: [{ id: "cancel", label: "Back", cls: "btn" }, { id: "ok", label: "Answer the call!", cls: "btn btn-gold" }], cls: "modal-wide" }).then((r) => {
       if (r !== "ok") return;
       const name = nameInput.value.trim();
       if (!name) {
         toast("Every warrior needs a name.", "bad");
-        return createFlow();
+        return createFlow(draft);
       }
       draft.name = name;
       save.profiles.push(draft);
@@ -89,4 +63,6 @@ export function renderTitle(app, ctx) {
     });
     setTimeout(() => nameInput.focus(), 100);
   }
+
+  return () => offInstall();
 }

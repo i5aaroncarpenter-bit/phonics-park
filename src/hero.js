@@ -59,6 +59,7 @@ export function heroSVG(profile, { size = 260, pose = "idle", cls = "" } = {}) {
   const hair = look.hair || "#5a3a1e";
   const tunic = look.tunic || "#7a4b2a";
   const skinDark = shade(skin, -25);
+  const girl = look.body === "girl";
 
   const svg = svgEl("svg", { viewBox: "0 0 200 280", width: size * (200 / 280), height: size, class: `hero-svg pose-${pose} ${cls}` });
   const gid = "relic" + gradSeq++;
@@ -104,10 +105,17 @@ export function heroSVG(profile, { size = 260, pose = "idle", cls = "" } = {}) {
     root.append(R(101, 254, 21, 9, "#6b4a2a", { rx: 3 }));
   }
 
-  // torso / tunic
-  root.append(P("M70 96 L130 96 L136 160 L138 196 L62 196 L64 160 Z", tunic));
-  root.append(P("M70 96 L100 96 L100 196 L62 196 L64 160 Z", shade(tunic, -18), { opacity: 0.35 }));
-  root.append(P("M62 196 L138 196 L134 184 L66 184 Z", shade(tunic, -30)));
+  // torso / tunic (girls wear a longer, flared tunic with a hem band)
+  if (girl) {
+    root.append(P("M72 96 L128 96 L134 160 L148 236 L52 236 L66 160 Z", tunic));
+    root.append(P("M72 96 L100 96 L100 236 L52 236 L66 160 Z", shade(tunic, -18), { opacity: 0.35 }));
+    root.append(P("M52 236 L148 236 L145 224 L55 224 Z", shade(tunic, -30)));
+    root.append(P("M58 226 L142 226", "none", { stroke: shade(tunic, 55), "stroke-width": 2, "stroke-dasharray": "4 4", opacity: 0.8 }));
+  } else {
+    root.append(P("M70 96 L130 96 L136 160 L138 196 L62 196 L64 160 Z", tunic));
+    root.append(P("M70 96 L100 96 L100 196 L62 196 L64 160 Z", shade(tunic, -18), { opacity: 0.35 }));
+    root.append(P("M62 196 L138 196 L134 184 L66 184 Z", shade(tunic, -30)));
+  }
 
   // breastplate
   if (plate) {
@@ -206,7 +214,16 @@ export function heroSVG(profile, { size = 260, pose = "idle", cls = "" } = {}) {
     root.append(L(124, 60, 130, 108, hair, 8));
     root.append(C(70, 110, 5, hair));
     root.append(C(130, 110, 5, hair));
+  } else if (style === "ponytail") {
+    root.append(P("M72 62 Q70 30 100 30 Q130 30 128 62 Q124 46 100 44 Q76 46 72 62 Z", hair));
+    root.append(P("M124 44 Q146 60 140 120 Q134 124 130 118 Q136 74 118 52 Z", hair));
+    root.append(C(128, 50, 5, shade(tunic, 40)));
+  } else if (style === "bun") {
+    root.append(P("M72 62 Q70 30 100 30 Q130 30 128 62 Q124 46 100 44 Q76 46 72 62 Z", hair));
+    root.append(C(100, 30, 12, hair));
+    root.append(C(100, 30, 12, "none", { stroke: shade(hair, -30), "stroke-width": 1.5 }));
   } else root.append(P("M72 62 Q70 30 100 30 Q130 30 128 62 Q124 46 100 44 Q76 46 72 62 Z", hair));
+  if (girl && !helmet) root.append(P("M74 44 Q100 32 126 44", "none", { stroke: shade(tunic, 40), "stroke-width": 4, "stroke-linecap": "round" }));
 
   // face
   const face = svgEl("g", { class: "face" });
@@ -214,6 +231,12 @@ export function heroSVG(profile, { size = 260, pose = "idle", cls = "" } = {}) {
   face.append(C(110, 62, 3, "#241a12"));
   face.append(C(91, 61, 1, "#fff"));
   face.append(C(111, 61, 1, "#fff"));
+  if (girl) {
+    face.append(L(86, 58, 84, 55, "#241a12", 1.5));
+    face.append(L(114, 58, 116, 55, "#241a12", 1.5));
+    face.append(C(84, 70, 4, "#e57373", { opacity: 0.35 }));
+    face.append(C(116, 70, 4, "#e57373", { opacity: 0.35 }));
+  }
   if (pose === "hurt") face.append(P("M92 78 Q100 72 108 78", "none", { stroke: "#7a3b2b", "stroke-width": 2.5, "stroke-linecap": "round" }));
   else face.append(P("M90 74 Q100 84 110 74", "none", { stroke: "#7a3b2b", "stroke-width": 2.5, "stroke-linecap": "round" }));
   face.append(P("M84 54 Q90 50 96 54", "none", { stroke: hair, "stroke-width": 2.5, "stroke-linecap": "round" }));

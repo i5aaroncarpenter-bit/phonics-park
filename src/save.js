@@ -7,11 +7,16 @@
 const KEY = "mightymen.save.v1";
 
 export const LOOKS = {
+  body: ["boy", "girl"],
   skin: ["#f4c9a5", "#e0a880", "#c68b5b", "#9c6440", "#6b4128"],
   hair: ["#2b1b12", "#5a3a1e", "#a0642c", "#d9a441", "#8a8a8a", "#c33b2b"],
-  hairStyle: ["short", "curly", "long", "braids"],
-  tunic: ["#7a4b2a", "#2f5d8a", "#5a7f3a", "#8a3a3a", "#6a4a8a", "#3a7f7a"],
+  hairStyle: ["short", "curly", "long", "braids", "ponytail", "bun"],
+  tunic: ["#7a4b2a", "#2f5d8a", "#5a7f3a", "#8a3a3a", "#6a4a8a", "#3a7f7a", "#b04a7a"],
 };
+
+export function isGirl(profile) {
+  return profile?.look?.body === "girl";
+}
 
 export function defaultSettings() {
   return {
@@ -30,9 +35,10 @@ export function newProfile(name, look = {}) {
     id: "p" + Math.random().toString(36).slice(2, 9),
     name: String(name || "Warrior").slice(0, 16),
     look: {
+      body: look.body ?? "boy",
       skin: look.skin ?? LOOKS.skin[1],
       hair: look.hair ?? LOOKS.hair[1],
-      hairStyle: look.hairStyle ?? "short",
+      hairStyle: look.hairStyle ?? (look.body === "girl" ? "long" : "short"),
       tunic: look.tunic ?? LOOKS.tunic[0],
     },
     createdAt: Date.now(),
@@ -46,7 +52,7 @@ export function newProfile(name, look = {}) {
     badges: [],
     streak: { last: "", count: 0 },
     orders: { date: "", tasks: [], claimed: false, completedCount: 0 },
-    stats: { stagesDone: 0, sharpenDone: 0, battlesWon: 0, perfectBlades: 0, recited: 0, shekelsEarned: 0 },
+    stats: { stagesDone: 0, sharpenDone: 0, battlesWon: 0, perfectBlades: 0, recited: 0, shekelsEarned: 0, spoken: 0, duelsPlayed: 0, duelWins: 0, gauntletRuns: 0, gauntletBest: 0 },
     lastPlayed: 0,
   };
 }
@@ -68,6 +74,7 @@ export function loadSave() {
 function hydrateProfile(p) {
   const fresh = newProfile(p.name, p.look);
   for (const k of Object.keys(fresh)) if (p[k] === undefined) p[k] = fresh[k];
+  p.look = { ...fresh.look, ...(p.look || {}) };
   p.stats = { ...fresh.stats, ...(p.stats || {}) };
   p.equipped = { ...fresh.equipped, ...(p.equipped || {}) };
   p.orders = { ...fresh.orders, ...(p.orders || {}) };

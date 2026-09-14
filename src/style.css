@@ -357,7 +357,8 @@ select.input { appearance: auto; }
 
 /* ---------- hall ---------- */
 .board { display: flex; flex-direction: column; gap: 8px; }
-.board-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; background: rgba(0,0,0,.3); border: 2px solid rgba(255,255,255,.1); }
+.board-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 14px; background: rgba(0,0,0,.3); border: 2px solid rgba(255,255,255,.1); flex-wrap: wrap; }
+.board-nums { display: flex; gap: 6px; margin-left: auto; }
 .board-row.me { border-color: var(--gold); }
 .board-pos { width: 32px; font-weight: 900; font-size: 1.1rem; }
 .board-info { flex: 1; min-width: 0; }
@@ -492,3 +493,66 @@ select.input { appearance: auto; }
 .field-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; position: relative; }
 .field-title { flex: 1; font-family: var(--font-head); color: var(--gold); font-size: 1rem; text-align: center; }
 .btn-small { min-height: 36px; padding: 6px 12px; font-size: .9rem; }
+
+/* look editor: boy / girl and the Tailor's Mirror */
+.body-pick { display: flex; gap: 8px; justify-content: center; width: 100%; }
+.body-btn { flex: 1; max-width: 160px; font-size: 1.05rem; }
+.hero-stage-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.btn-mirror { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.25); }
+.btn-install { background: linear-gradient(180deg, #3f8fe6, #2a6fc0); border-color: #7fb6ff; }
+.btn-install[hidden] { display: none; }
+
+/* new camp doors */
+.door-gauntlet { background: linear-gradient(180deg, rgba(46,158,91,.3), rgba(0,0,0,.3)); }
+.door-duel { background: linear-gradient(180deg, rgba(232,93,117,.3), rgba(0,0,0,.3)); }
+
+/* shared question card extras */
+.q-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .15em; color: var(--bronze-d); margin-bottom: 4px; }
+.handoff { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 10px 0; }
+.handoff h3 { font-size: 1.3rem; color: var(--bronze-d); }
+.row.center { justify-content: center; flex-wrap: wrap; }
+
+/* Sibling Duel */
+.duel-arena { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; margin-bottom: 10px; }
+.duel-side { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px 8px; border-radius: 18px; border: 2px solid rgba(255,255,255,.12); background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.25)); transition: border-color .2s, box-shadow .2s; }
+.duel-side.active { border-color: var(--gold); box-shadow: 0 0 0 0 rgba(242,193,78,.5); animation: glow 2s infinite; }
+.duel-side.winner { border-color: var(--gold); background: linear-gradient(180deg, rgba(242,193,78,.25), rgba(0,0,0,.25)); }
+.duel-side.rival .duel-fig { transform: scaleX(-1); }
+.duel-name { font-family: var(--font-head); color: var(--gold); font-size: .95rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.duel-score { font-size: 1.6rem; font-weight: 900; color: #fff; }
+.duel-vs { font-family: var(--font-head); font-size: 1.4rem; color: var(--red); text-shadow: 0 2px 0 rgba(0,0,0,.5); padding-bottom: 30px; }
+.duel-status { text-align: center; min-height: 24px; margin-bottom: 8px; color: var(--gold-l); font-weight: 800; }
+.duel-result { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.duel-payout { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.duel-pay { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 14px; border-radius: 14px; background: rgba(0,0,0,.08); }
+.duel-pay .gold { color: var(--gold-d); }
+.rival-list { display: flex; flex-direction: column; gap: 8px; }
+.rival-card { display: flex; align-items: center; gap: 12px; text-align: left; padding: 8px 12px; border-radius: 14px; border: 2px solid var(--bronze); background: linear-gradient(180deg, #fff9e6, #efdcb0); color: var(--ink); cursor: pointer; font-family: var(--font-body); }
+.rival-card.locked { opacity: .5; cursor: not-allowed; }
+.rival-info { flex: 1; }
+
+/* The Gauntlet */
+.gauntlet-hud { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 8px; margin-bottom: 10px; }
+.g-clock { font-family: var(--font-head); font-size: 2.4rem; color: #fff; text-align: center; padding: 6px 0; border-radius: 14px; background: rgba(0,0,0,.35); border: 2px solid rgba(255,255,255,.15); transition: color .2s, transform .1s; }
+.g-clock.urgent { color: #ff9f8a; border-color: var(--red); animation: blink 1s infinite; }
+.g-clock.hit { transform: scale(.92); color: var(--red); }
+.g-score { display: flex; flex-direction: column; align-items: center; }
+.g-score b { font-size: 2rem; color: var(--gold); line-height: 1; }
+.g-streak { text-align: center; font-weight: 900; color: #ff7a3c; min-height: 24px; }
+.g-final { font-family: var(--font-head); font-size: 3.4rem; color: var(--gold-d); line-height: 1; }
+
+/* Speak the Sword */
+.speak-words .vw.veiled { color: transparent; background: rgba(0,0,0,.12); }
+.speak-words .vw.lit { background: rgba(46,158,91,.3); color: #1b5e34; transform: none; }
+.speak-words .vw.missed { color: var(--red); background: rgba(192,57,43,.1); text-decoration: underline; }
+.heard { min-height: 26px; text-align: center; margin: 10px 0 4px; color: var(--parch-2); font-style: italic; }
+.speak-controls { flex-wrap: wrap; justify-content: center; }
+.btn-mic.listening { animation: glow 1.2s infinite; border-color: #ff9f8a; background: linear-gradient(180deg, #ff8a7a, #c0392b); color: #fff; }
+.btn-mic-small { background: linear-gradient(180deg, #ffd0d0, #f3a6a6); color: var(--ink); border-color: #b33; }
+
+@media (max-width: 520px) {
+  .duel-arena .hero-svg { height: 100px; width: auto; }
+  .g-clock { font-size: 1.8rem; }
+  .board-nums { flex-basis: 100%; justify-content: space-around; margin-left: 0; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,.12); }
+  .board-num { min-width: 44px; font-size: .9rem; }
+}

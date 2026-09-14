@@ -5,11 +5,12 @@
 
 import { el, button, topbar, modal, toast, fmt } from "../ui.js";
 import { allVerses, verseText, TRANSLATIONS, SCROLLS, getVerse } from "../data/verses.js";
-import { rankFor } from "../data/progress.js";
+import { rankFor, rankTitle } from "../data/progress.js";
 import { valor, currentSharpness, isMastered, recordRecite, checkBadges, grant } from "../engine/progress.js";
 import { exportSave, importSave, persist as persistRaw } from "../save.js";
 import { setSpeechEnabled, speechAvailable } from "../speech.js";
 import { setMusic, setSfx, sfx } from "../audio.js";
+import { canInstall, promptInstall, isStandalone, isIOS } from "../install.js";
 
 export function renderTent(app, ctx) {
   const { save } = ctx;
@@ -83,12 +84,20 @@ export function renderTent(app, ctx) {
         }, "btn")),
     );
 
+    body.append(sec("Install on this device"));
+    if (isStandalone()) body.append(el("p", { class: "small muted", text: "✅ Installed. The game opens from your home screen and works without internet." }));
+    else if (canInstall()) body.append(el("div", { class: "row" }, button("📲 Install Mighty Men", async () => { if (await promptInstall()) toast("Installed! Look for the sword on your home screen.", "good"); draw(); }, "btn btn-gold"), el("span", { class: "small muted", text: "Full screen, no browser bar, works offline." })));
+    else if (isIOS()) body.append(el("p", { class: "small muted", text: "On iPhone or iPad: tap the Share button in Safari, then \"Add to Home Screen\". The game then opens full screen and works offline." }));
+    else body.append(el("p", { class: "small muted", text: "In Chrome or Edge, open the browser menu and choose \"Install app\" or \"Add to Home screen\". The game then works offline." }));
+
     body.append(sec("How the game teaches"));
     body.append(
       el("ul", { class: "how" },
         el("li", { text: "The Forge takes every verse through 5 stages: hear it, rebuild it, fill the gaps, race the next word, then recite it from a word bank and name the reference." }),
         el("li", { text: "Mastered verses become swords with 1-5 stars of sharpness. Stars fade over days (1, 2, 4, 7, 14, 30) unless the child Sharpens, which is spaced repetition in disguise." }),
         el("li", { text: "Battles are turn-based and every attack is a quick question from mastered verses, so fighting is review." }),
+        el("li", { text: "Speak the Sword listens through the microphone while the child recites a mastered verse with the words hidden; 85% of the words heard counts as word-perfect. The game itself stores no audio; recognition is handled by the browser's own speech service (Chrome, for example, processes it on Google's servers)." }),
+        el("li", { text: "The Gauntlet (60 seconds of mixed questions) and Sibling Duels are fast review of everything mastered, disguised as competition." }),
         el("li", { text: "Recite approvals (this tent or after mastery) reward saying the verse aloud to a real person." })),
     );
   }
@@ -104,7 +113,7 @@ export function renderTent(app, ctx) {
     for (const p of save.profiles) {
       const r = rankFor(p.xp);
       const card = el("div", { class: "report-card" });
-      card.append(el("h3", { text: `${p.name} · ${r.icon} ${r.name}` }));
+      card.append(el("h3", { text: `${p.name} · ${r.icon} ${rankTitle(r, p)}` }));
       card.append(el("div", { class: "small muted", text: `Valor ${valor(p)} · ${fmt(p.shekels)} shekels · ${p.stats.battlesWon} battles won · ${p.streak.count}-day streak · last played ${p.lastPlayed ? new Date(p.lastPlayed).toLocaleDateString() : "never"}` }));
       const mastered = allVerses(settings).filter((v) => isMastered(p, v.id));
       const learning = allVerses(settings).filter((v) => (p.verses[v.id]?.stage || 0) > 0 && !isMastered(p, v.id));

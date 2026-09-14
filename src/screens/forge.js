@@ -8,7 +8,7 @@ import { el, button, topbar, coinPill, modal, toast, askPin } from "../ui.js";
 import { verseText, tokenize, allVerses } from "../data/verses.js";
 import { STAGE_REWARDS } from "../data/progress.js";
 import { heroStats } from "../data/gear.js";
-import { speak, stopSpeaking } from "../speech.js";
+import { speak, stopSpeaking, recognitionAvailable } from "../speech.js";
 import { sfx, startMusic } from "../audio.js";
 import * as hear from "../stages/hear.js";
 import * as order from "../stages/order.js";
@@ -111,6 +111,7 @@ export function renderForge(app, ctx) {
       ctx.persist();
       const isLast = stageIndex === STAGE_COUNT - 1;
       const extra = [];
+      if (out.mastered && recognitionAvailable()) extra.push({ id: "speak", label: "🎤 Speak it aloud (+20)", cls: "btn btn-primary" });
       if (out.mastered) extra.push({ id: "recite", label: "🗣️ Recite to your Captain (+30)", cls: "btn btn-primary" });
       const choice = await showReward({
         title: out.mastered ? "VERSE MASTERED!" : `${STAGE_REWARDS[stageIndex].name} complete!`,
@@ -129,7 +130,8 @@ export function renderForge(app, ctx) {
       if (choice === "recite") await reciteFlow();
       stageIndex += 1;
       if (isLast) {
-        onDone();
+        if (choice === "speak" && ctx.onSpeak) ctx.onSpeak(verse);
+        else onDone();
         return;
       }
     }

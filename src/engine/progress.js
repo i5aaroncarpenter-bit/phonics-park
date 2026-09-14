@@ -9,7 +9,8 @@ import { BATTLES } from "../data/battles.js";
 import { RELIC_SET, SLOTS } from "../data/gear.js";
 import {
   STAGE_REWARDS, MASTERY_BONUS, RECITE_BONUS, SHARPEN_REWARD, ORDERS_CHEST,
-  REVIEW_INTERVALS, rankFor, badgeById,
+  SPOKEN_BONUS, GAUNTLET, DUEL,
+  REVIEW_INTERVALS, rankFor, rankTitle, badgeById,
 } from "../data/progress.js";
 import { today, daysBetween } from "../save.js";
 
@@ -63,7 +64,7 @@ export function grant(profile, { shekels = 0, xp = 0 }) {
   profile.xp += xp;
   profile.stats.shekelsEarned += Math.max(0, shekels);
   const after = rankFor(profile.xp);
-  return { shekels, xp, rankUp: after.id !== before.id ? after : null };
+  return { shekels, xp, rankUp: after.id !== before.id ? { ...after, name: rankTitle(after, profile) } : null };
 }
 
 /** Called when a Forge stage is completed. Returns what was earned. */
@@ -126,6 +127,55 @@ export function completeSharpen(profile, verseId, { perfect = false } = {}) {
   return { ...g, sharpness: v.sharpness };
 }
 
+/**
+ * Speak the Sword: `pct` is the share of verse words heard (0-1). Word-perfect
+ * (>= 0.85) polishes the sword to 5 stars and pays the full bonus once per day
+ * per verse; a near miss pays a little. Returns null when nothing is owed.
+ */
+export function recordSpoken(profile, verseId, pct) {
+  const v = verseState(profile, verseId);
+  const t = today();
+  const perfect = pct >= 0.85;
+  const near = !perfect && pct >= 0.6;
+  if (!perfect && !near) return null;
+  if (v.spokenOn === t) return { shekels: 0, xp: 0, rankUp: null, perfect, repeat: true, sharpness: currentSharpness(profile, verseId) };
+  v.spokenOn = t;
+  if (perfect) {
+    v.spoken = (v.spoken || 0) + 1;
+    profile.stats.spoken += 1;
+    if (v.mastered) {
+      v.sharpness = 5;
+      v.lastReview = t;
+    }
+    return { ...grant(profile, { shekels: SPOKEN_BONUS.shekels, xp: SPOKEN_BONUS.xp }), perfect: true, repeat: false, sharpness: v.mastered ? 5 : 0 };
+  }
+  return { ...grant(profile, { shekels: SPOKEN_BONUS.near, xp: Math.round(SPOKEN_BONUS.near) }), perfect: false, repeat: false, sharpness: currentSharpness(profile, verseId) };
+}
+
+export function gauntletUnlocked(profile) {
+  return valor(profile) >= GAUNTLET.minValor;
+}
+
+/** The Gauntlet is over: pay per correct answer, plus a bonus for a new best. */
+export function recordGauntlet(profile, { correct = 0, bestStreak = 0 } = {}) {
+  profile.stats.gauntletRuns += 1;
+  const prevBest = profile.stats.gauntletBest || 0;
+  const newBest = correct > prevBest;
+  if (newBest) profile.stats.gauntletBest = correct;
+  let shekels = correct * GAUNTLET.perCorrect;
+  if (bestStreak >= 5) shekels += GAUNTLET.streakBonus;
+  if (newBest && prevBest > 0) shekels += GAUNTLET.newBest;
+  const g = grant(profile, { shekels, xp: correct * GAUNTLET.xpPerCorrect });
+  return { ...g, newBest, prevBest };
+}
+
+/** A Sibling Duel ended. `result` is "win" | "lose" | "draw". */
+export function recordDuel(profile, result) {
+  profile.stats.duelsPlayed += 1;
+  if (result === "win") profile.stats.duelWins += 1;
+  return grant(profile, DUEL[result] || DUEL.draw);
+}
+
 export function recordBattleWin(profile, battle, { turns = 0 } = {}) {
   const rec = profile.battles[battle.id] || { won: 0, bestTurns: 0 };
   const first = rec.won === 0;
@@ -177,13 +227,15 @@ const ORDER_TEMPLATES = [
   { id: "sharpen", text: "Sharpen 2 swords", target: 2, icon: "✨" },
   { id: "battle", text: "Win a battle or arena wave", target: 1, icon: "⚔️" },
   { id: "listen", text: "Listen to a verse read aloud", target: 1, icon: "👂" },
+  { id: "gauntlet", text: "Run the Gauntlet (needs 3 mastered verses)", target: 1, icon: "⏱️" },
 ];
 
 export function ensureOrders(profile) {
   const t = today();
   if (profile.orders.date === t && profile.orders.tasks.length) return profile.orders;
-  const day = Number(t.replace(/-/g, "")) % ORDER_TEMPLATES.length;
-  const picks = [ORDER_TEMPLATES[day], ORDER_TEMPLATES[(day + 1) % ORDER_TEMPLATES.length], ORDER_TEMPLATES[(day + 3) % ORDER_TEMPLATES.length]];
+  const avail = ORDER_TEMPLATES.filter((x) => x.id !== "gauntlet" || gauntletUnlocked(profile));
+  const day = Number(t.replace(/-/g, "")) % avail.length;
+  const picks = [avail[day], avail[(day + 1) % avail.length], avail[(day + 3) % avail.length]];
   const seen = new Set();
   profile.orders = {
     date: t,
@@ -250,6 +302,12 @@ export function checkBadges(profile, settings) {
   if (profile.shekels >= 1000) give("rich");
   if (SLOTS.filter((s) => s.id !== "cloak").every((s) => profile.equipped[s.id] && profile.equipped[s.id] !== "staff")) give("geared");
   if (profile.orders.completedCount >= 7) give("orders7");
+  if (profile.stats.spoken >= 1) give("spoken");
+  if (profile.stats.spoken >= 10) give("spoken10");
+  if (profile.stats.gauntletBest >= 15) give("gauntlet15");
+  if (profile.stats.gauntletBest >= 30) give("gauntlet30");
+  if (profile.stats.duelWins >= 1) give("duel_win");
+  if (profile.stats.duelWins >= 5) give("duel5");
   return earned;
 }
 

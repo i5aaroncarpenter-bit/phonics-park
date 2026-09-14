@@ -3,11 +3,12 @@
 import { el, button, topbar, coinPill, valorPill, progressBar, fmt, toast } from "../ui.js";
 import { heroSVG } from "../hero.js";
 import { heroStats } from "../data/gear.js";
-import { rankFor, nextRank } from "../data/progress.js";
+import { rankFor, nextRank, rankTitle } from "../data/progress.js";
 import { BATTLES } from "../data/battles.js";
 import { allVerses, getVerse } from "../data/verses.js";
 import { valor, dullVerses, ensureOrders, ordersComplete, claimOrders, nextLockedBattle, battleUnlocked, checkBadges, isMastered } from "../engine/progress.js";
 import { showReward } from "./reward.js";
+import { openMirror } from "./look.js";
 import { sfx, startMusic } from "../audio.js";
 
 export function renderCamp(app, ctx) {
@@ -33,13 +34,17 @@ export function renderCamp(app, ctx) {
 
   // Hero panel
   const hero = el("div", { class: "camp-hero" });
-  hero.append(el("div", { class: "hero-stage" }, heroSVG(profile, { size: 250 })));
+  const stage = el("div", { class: "hero-stage" }, heroSVG(profile, { size: 250 }));
+  const mirrorBtn = button("🪞 Change look", async () => {
+    if (await openMirror(profile, ctx.persist)) ctx.refresh();
+  }, "btn btn-small btn-mirror");
+  hero.append(el("div", { class: "hero-stage-wrap" }, stage, mirrorBtn));
   const info = el("div", { class: "hero-info" });
   info.append(el("div", { class: "hero-name", text: profile.name }));
-  info.append(el("div", { class: "hero-rank", text: `${rank.icon} ${rank.name}` }));
+  info.append(el("div", { class: "hero-rank", text: `${rank.icon} ${rankTitle(rank, profile)}` }));
   if (next) {
     info.append(progressBar(profile.xp - rank.xp, next.xp - rank.xp, "xp"));
-    info.append(el("div", { class: "small muted", text: `${fmt(next.xp - profile.xp)} XP to ${next.name}` }));
+    info.append(el("div", { class: "small muted", text: `${fmt(next.xp - profile.xp)} XP to ${rankTitle(next, profile)}` }));
   } else info.append(el("div", { class: "small gold", text: "Highest rank achieved!" }));
   info.append(
     el(
@@ -62,6 +67,7 @@ export function renderCamp(app, ctx) {
   const inProgress = allVerses(settings).find((x) => (profile.verses[x.id]?.stage || 0) > 0 && !isMastered(profile, x.id));
   const nextBattle = BATTLES.find((b) => battleUnlocked(profile, b) && !(profile.battles[b.id]?.won > 0));
   const locked = nextLockedBattle(profile);
+  const rivals = save.profiles.filter((p) => p.id !== profile.id);
 
   const doors = el("div", { class: "doors" });
   doors.append(
@@ -69,6 +75,8 @@ export function renderCamp(app, ctx) {
     door("✨", "Sharpen", dull.length ? `${dull.length} sword${dull.length === 1 ? " needs" : "s need"} sharpening` : v ? "All swords are sharp" : "Master a verse first", () => (dull.length ? ctx.onSharpen(dull[0].verse) : ctx.onScrolls()), `door-sharpen ${dull.length ? "attention" : ""}`),
     door("⚔️", "Battle", nextBattle ? `Ready: ${nextBattle.name}` : locked ? `Master ${locked.valor - v} more verse${locked.valor - v === 1 ? "" : "s"} to unlock ${locked.name}` : "All giants have fallen!", () => ctx.onBattles(), `door-battle ${nextBattle ? "attention" : ""}`),
     door("🛠️", "The Armory", `${fmt(profile.shekels)} shekels to spend`, () => ctx.onArmory(), "door-armory"),
+    door("⏱️", "The Gauntlet", v >= 3 ? (profile.stats.gauntletBest ? `Best: ${profile.stats.gauntletBest} in 60s` : "60 seconds. How many can you answer?") : `Master ${3 - v} more verse${3 - v === 1 ? "" : "s"} to enter`, () => ctx.onGauntlet(), "door-gauntlet"),
+    door("🤺", "Sibling Duel", rivals.length ? `Challenge ${rivals.length === 1 ? rivals[0].name : "a brother or sister"}` : "Needs a second warrior", () => ctx.onDuel(), "door-duel"),
     door("🏛️", "Hall of Valor", `${profile.badges.length} badges earned`, () => ctx.onHall(), "door-hall"),
     door("⛺", "Captain's Tent", "For parents", () => ctx.onTent(), "door-tent"),
   );

@@ -72,7 +72,7 @@ export function play(root, ctx) {
       sfx("good");
       sparks(card, 12);
       head.querySelector("h2").textContent = "Where is it written?";
-      head.querySelector("p").textContent = "Every mighty man knows where his sword came from. Tap the reference.";
+      head.querySelector("p").textContent = "Every mighty warrior knows where the sword came from. Tap the reference.";
       const others = shuffle(allVerses(settings).filter((v) => v.ref !== ref).map((v) => v.ref)).slice(0, 2);
       const opts = shuffle([ref, ...others]);
       tray.replaceChildren(

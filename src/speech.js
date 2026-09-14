@@ -141,3 +141,81 @@ export function speak(text, { rate = 0.9, onWord = null, onEnd = null } = {}) {
 export function isSpeaking() {
   return !!(synth && synth.speaking);
 }
+
+/* ---------- listening (Speak the Sword) ---------- */
+
+function Recognition() {
+  if (typeof window === "undefined") return null;
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+export function recognitionAvailable() {
+  return !!Recognition() && (typeof isSecureContext === "undefined" || isSecureContext);
+}
+
+/**
+ * Start listening. `onUpdate(text, isFinal)` receives the growing transcript.
+ * Returns { stop(), done } where `done` resolves { transcript, error } once
+ * recognition ends (by stop(), silence, or a timeout).
+ */
+export function startListening({ lang = "en-US", maxMs = 45000, onUpdate = null } = {}) {
+  const R = Recognition();
+  let finals = [];
+  let interim = "";
+  let error = null;
+  let stopped = false;
+  let rec = null;
+  let timer = 0;
+  const done = new Promise((resolve) => {
+    const settle = () => {
+      clearTimeout(timer);
+      resolve({ transcript: [...finals, interim].join(" ").replace(/\s+/g, " ").trim(), error });
+    };
+    if (!R) {
+      error = "unsupported";
+      settle();
+      return;
+    }
+    stopSpeaking();
+    duck(true);
+    rec = new R();
+    rec.lang = lang;
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e) => {
+      interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finals.push(t);
+        else interim += t;
+      }
+      if (onUpdate) onUpdate([...finals, interim].join(" ").replace(/\s+/g, " ").trim(), false);
+    };
+    rec.onerror = (e) => {
+      if (e.error !== "no-speech" && e.error !== "aborted") error = e.error || "error";
+    };
+    rec.onend = () => {
+      duck(false);
+      settle();
+    };
+    try {
+      rec.start();
+    } catch (e) {
+      error = "start-failed";
+      duck(false);
+      settle();
+    }
+    timer = setTimeout(() => stop(), maxMs);
+  });
+  function stop() {
+    if (stopped) return;
+    stopped = true;
+    try {
+      rec && rec.stop();
+    } catch {
+      /* ignore */
+    }
+  }
+  return { stop, done };
+}

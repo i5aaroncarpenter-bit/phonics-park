@@ -19,6 +19,7 @@ import { showReward } from "./reward.js";
 import { sfx, startMusic } from "../audio.js";
 import { sparks, burst, screenShake, confetti, starsBurst } from "../fx.js";
 import { speak, stopSpeaking } from "../speech.js";
+import { isGirl } from "../save.js";
 
 export function renderBattle(app, ctx) {
   const { save, profile, battle, arena = false } = ctx;
@@ -351,7 +352,7 @@ export function renderBattle(app, ctx) {
       continueLabel: battle.final && out.first ? "Take your place among the Mighty ➜" : "Back to the Campaign ➜",
     });
     if (battle.final && out.first) {
-      await modal({ title: "Mighty Man of Valor", body: `${profile.name}, you have fought every battle and hidden ${Object.values(profile.verses).filter((v) => v.mastered).length} verses in your heart. "Be strong and courageous" — the LORD your God is with you wherever you go. The Arena awaits, and there are always more scrolls to master.`, buttons: [{ id: "ok", label: "Amen!", cls: "btn btn-gold" }] });
+      await modal({ title: isGirl(profile) ? "Mighty Woman of Valor" : "Mighty Man of Valor", body: `${profile.name}, you have fought every battle and hidden ${Object.values(profile.verses).filter((v) => v.mastered).length} verses in your heart. "Be strong and courageous" — the LORD your God is with you wherever you go. The Arena awaits, and there are always more scrolls to master.`, buttons: [{ id: "ok", label: "Amen!", cls: "btn btn-gold" }] });
     }
     alive = false;
     ctx.onDone();
@@ -390,7 +391,7 @@ export function renderBattle(app, ctx) {
       title: arena ? `Fallen at wave ${state.wave}` : "Retreat and train",
       body: arena
         ? `You keep the ${state.arenaShekels} shekels you won. Sharpen your swords and return stronger.`
-        : `${state.enemy.name} was too strong this time. No mighty man wins every fight. Master more verses to grow your Valor, buy better armor, and come back for ${battle.name}!`,
+        : `${state.enemy.name} was too strong this time. No warrior wins every fight. Master more verses to grow your Valor, buy better armor, and come back for ${battle.name}!`,
       buttons: [{ id: "ok", label: "Back to camp", cls: "btn btn-gold" }],
     });
     ctx.persist();
